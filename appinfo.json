@@ -1,0 +1,9 @@
+{
+	"id": "org.webosports.app.firstuse",
+	"icon": "icon.png",
+	"type": "web",
+	"main": "index.html",
+	"title": "First Use",
+	"uiRevision": 2,
+	"visible": "false",
+}
