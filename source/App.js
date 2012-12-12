@@ -18,7 +18,15 @@ enyo.kind({
 		{kind: "onyx.Toolbar", style: "line-height: 42px;", layoutKind: "FittableColumnsLayout", components:[
 			{kind: "onyx.Button", style: "width: 45%; background-color: darkred;", content: "Decline"},
 			{fit: true},
-			{kind: "onyx.Button", style: "width: 45%; background-color: green;", content: "Accept"}
+			{kind: "onyx.Button", style: "width: 45%; background-color: green;", content: "Accept", ontap: "acceptLicense" }
 		]}
 	],
+	acceptLicense: function(inSender, inEvent) {
+		/* this will create the needed /var/luna/preferences/ran-first-use file to start
+		 * LunaSysMgr in lunaui mode */
+		PalmSystem.markFirstUseDone();
+		/* NOTE: this will trigger a restart of the LunaSysMgr as it exits and upstart
+		 * will restart it immediately */
+		PalmSystem.shutdown();
+	}
 });
