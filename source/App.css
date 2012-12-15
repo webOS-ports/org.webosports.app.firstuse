@@ -3,9 +3,11 @@
 	This way, you can minify your application, and just remove the "source" folder for production
 */
 #app {
-	background-color: #555;
+	background-color: black;
 }
 
 .onyx-toolbar {
 	height: 64px;
+	background-color: black;
+	border: 0;
 }

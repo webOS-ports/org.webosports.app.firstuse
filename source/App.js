@@ -1,24 +1,25 @@
 enyo.kind({
 	name: "App",
 	classes: "enyo-fit",
-	layoutKind: "FittableRowsLayout",
+	layoutKind: "FittableRowsLayout",style: "padding: 8px",
 	components:[
-		{kind: "PortsHeader",
-		title: "License",
-		taglines: [
-			"You're definitely going to read this, right?",
-			"Lots of text!",
-			"FOSS!",
-			"Scroll scroll scroll scroll tap.",
-			"Will you take the red pill, or the green pill?"
-		]},
 		{kind: "Scroller", fit: true, touch: true, horizontal: "hidden", components:[
+			{kind: "PortsHeader",
+			title: "License",
+			style: "height: 42px;",
+			taglines: [
+				"You're definitely going to read this, right?",
+				"Lots of text!",
+				"FOSS!",
+				"Scroll scroll scroll scroll tap.",
+				"Will you take the red pill, or the green pill?"
+			]},
 			{content: "LICENSE PLACEHOLDER<br>You (the user) hereby agree to be generally apathetic about this piece of text (the piece of text).", allowHtml: true, style: "padding: 10px; color: white;"}
 		]},
-		{kind: "onyx.Toolbar", style: "line-height: 42px;", layoutKind: "FittableColumnsLayout", components:[
-			{kind: "onyx.Button", style: "width: 45%; background-color: darkred;", content: "Decline"},
+		{tag: "div", style: "margin: 8px 8% 0 8%; padding: 0; line-height: 42px;", layoutKind: "FittableColumnsLayout", components:[
+			{kind: "onyx.Button", style: "width: 45%; color: white; background-color: darkred;", content: "Decline"},
 			{fit: true},
-			{kind: "onyx.Button", style: "width: 45%; background-color: green;", content: "Accept", ontap: "acceptLicense" }
+			{kind: "onyx.Button", style: "width: 45%; color: white; background-color: green;", content: "Accept", ontap: "acceptLicense"}
 		]}
 	],
 	acceptLicense: function(inSender, inEvent) {
