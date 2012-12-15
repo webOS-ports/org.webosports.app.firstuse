@@ -2,8 +2,12 @@
 	Put anything you reference with "url()" in ../assets/
 	This way, you can minify your application, and just remove the "source" folder for production
 */
-#app {
+body {
 	background-color: black;
+}
+
+#app {
+	opacity: 0;
 }
 
 .onyx-toolbar {
