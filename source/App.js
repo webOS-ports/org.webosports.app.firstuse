@@ -1,10 +1,4 @@
 enyo.kind({
-	name: "PowerService",
-	kind: "enyo.webOS.ServiceRequest",
-	service: "luna://com.palm.power/shutdown/"
-});
-
-enyo.kind({
 	name: "App",
 	classes: "enyo-fit",
 	layoutKind: "FittableRowsLayout",style: "padding: 8px",
@@ -39,6 +33,7 @@ enyo.kind({
 		]}
 	],
 	rendered: function(inSender, inEvent) {
+		//Not using Cordova deviceready because it doesn't appear to work in MinimalUI
 		this.inherited(arguments);
 		this.$.OpacityAnimator.setStartValue(0);
 		this.$.OpacityAnimator.setEndValue(1);
@@ -76,11 +71,15 @@ enyo.kind({
 			}
 			else {
 				//Shutdown device
-				var powerOff = new PowerService({method: "machineOff"});
-				powerOff.go({reason: "First Use Declined."});
+				var request = navigator.service.Request("luna://com.palm.power/shutdown/",
+				{
+					method: "machineOff",
+					parameters: {reason: "First Use Declined."},
+				});
 			}
 		}
 		else {
+			//Remove transform, blocks input otherwise
 			this.addStyles("-webkit-transform: scale3d();");
 		}
 	}
