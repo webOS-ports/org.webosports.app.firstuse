@@ -5,5 +5,6 @@ enyo.depends(
 	"$lib/ports",
 	//Main App
 	"App.css",
+	"License.js",
 	"App.js"
 );

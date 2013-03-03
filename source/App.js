@@ -16,7 +16,7 @@ enyo.kind({
 				"Scroll scroll scroll scroll tap.",
 				"Will you take the red pill, or the green pill?"
 			]},
-			{content: "LICENSE PLACEHOLDER<br>You (the user) hereby agree to be generally apathetic about this piece of text (the piece of text).", allowHtml: true, style: "padding: 10px; color: white;"}
+			{content: licenseContent, allowHtml: true, style: "padding: 10px; color: white;"}
 		]},
 		{tag: "div", style: "margin: 8px 8% 0 8%; padding: 0; line-height: 42px;", layoutKind: "FittableColumnsLayout", components:[
 			{name: "DeclineButton",
