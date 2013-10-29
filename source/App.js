@@ -67,7 +67,9 @@ enyo.kind({
 				/* this will create the needed /var/luna/preferences/ran-first-use file to start
 				 * LunaSysMgr in lunaui mode */
 				PalmSystem.markFirstUseDone();
-				PalmSystem.shutdown();
+
+				/* closing the main window will force the app to be closed */
+				window.close();
 			}
 			else {
 				//Shutdown device
