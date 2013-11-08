@@ -7,7 +7,7 @@ enyo.kind({
 		{name: "OpacityAnimator", kind: "Animator", startValue: 1, endValue: 0, duration: 1500, onStep: "animatorStep", onEnd: "animatorEnd"},
 		{kind: "Scroller", fit: true, touch: true, horizontal: "hidden", components:[
 			{kind: "PortsHeader",
-			title: "License",
+			title: "License Agreement",
 			style: "height: 42px;",
 			taglines: [
 				"You're definitely going to read this, right?",
