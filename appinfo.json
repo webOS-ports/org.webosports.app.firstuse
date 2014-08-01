@@ -1,8 +1,7 @@
 {
 	"id": "org.webosports.app.firstuse",
-	"icon": "icon.png",
-	"type": "web",
-	"main": "index.html",
+	"type": "qml",
+	"main": "qml/main.qml",
 	"title": "First Use",
 	"uiRevision": 2,
 	"visible": "false",
