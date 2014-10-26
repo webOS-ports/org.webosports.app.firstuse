@@ -24,7 +24,7 @@ endif()
 set(APP_DIR ${WEBOS_INSTALL_WEBOS_APPLICATIONSDIR}/org.webosports.app.firstuse)
 set(APP_DATA appinfo.json)
 
-set(LICENSE_DIR ${WEBOS_INSTALL_DATADIR}/lunes-license-agreements)
+set(LICENSE_DIR ${WEBOS_INSTALL_DATADIR}/luneos-license-agreements)
 set(LICENSE_DATA licenses/main_en.html)
 
 install(FILES ${APP_DATA} DESTINATION ${APP_DIR})
