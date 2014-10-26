@@ -1,0 +1,4 @@
+module org.webosports.app.firstuse
+FirstUseUtils 1.0 FirstUseUtilsStub.js
+
+typeinfo org.webosports.app.firstuse.qmltypes
