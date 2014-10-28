@@ -23,6 +23,7 @@ import firstuse 1.0
 BasePage {
     title: "Everything setup!"
     forwardButtonSourceComponent: forwardButton
+    hasBackButton: false
 
     Column {
         id: column
@@ -30,7 +31,30 @@ BasePage {
         spacing: Units.gu(1)
 
         Label {
-            id: label1
+            anchors.left: parent.left
+            anchors.right: parent.right
+            wrapMode: Text.Wrap
+            text: "Your device is now fully configured and ready to be used."
+            color: "white"
+            font.pixelSize: FontUtils.sizeToPixels("medium")
+        }
+
+        Label {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            wrapMode: Text.Wrap
+            text: "If you find any bugs please report them on <a href=\"http://issues.webos-ports.org\">issues.webos-ports.org</a> or if you want to support the development of LuneOS have a look at our Wiki <a href=\"http://webos-ports.org\">webos-ports.org</a>."
+            color: "white"
+            font.pixelSize: FontUtils.sizeToPixels("medium")
+        }
+
+        Item {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            height: Units.gu(5)
+        }
+
+        Label {
             anchors.left: parent.left
             anchors.right: parent.right
             wrapMode: Text.Wrap

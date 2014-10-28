@@ -39,6 +39,7 @@ Item {
     property alias content: contentHolder
 
     property string title: ""
+    property alias titleSize: titleLabel.font.pixelSize
     property bool needGlow: false
 
     signal backClicked()

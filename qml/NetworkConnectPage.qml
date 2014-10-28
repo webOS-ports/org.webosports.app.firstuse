@@ -42,72 +42,86 @@ BasePage {
         }
     }
 
-    Column {
-        id: column
+    Item {
         anchors.fill: content
-        spacing: Units.gu(1)
 
-        Label {
-            text: "Enter passphrase"
-            color: "white"
-        }
-
-        Rectangle {
-            color: "white"
-            anchors.left: parent.left
-            anchors.right: parent.right
-            height: Units.gu(4)
-            TextInput {
-                id: passphrase
-                anchors.fill: parent
-                anchors.leftMargin: Units.gu(1)
-                anchors.topMargin: Units.gu(1)
-                anchors.bottomMargin: Units.gu(1)
-                anchors.rightMargin: Units.gu(1)
-                echoMode: TextInput.Password
-                color: "black"
-                focus: true
-                clip: true
-                font.pixelSize: FontUtils.sizeToPixels("medium")
-
-                onActiveFocusChanged: {
-                    Qt.inputMethod.show();
-                }
+        MouseArea {
+            anchors.fill: parent
+            onPressed: {
+                mouse.accepted = false;
+                var selectedItem = root.childAt(mouse.x, mouse.y);
+                if (!selectedItem)
+                    selectedItem = root;
+                selectedItem.focus = true;
             }
         }
 
-        Label {
-            id: passphraseHint
-            visible: false
-            color: "red"
-            text: "Please enter a passphrase!"
-            font.pixelSize: FontUtils.sizeToPixels("medium")
+        Column {
+            id: column
+            anchors.fill: parent
+            spacing: Units.gu(1)
+
+            Label {
+                text: "Enter passphrase"
+                color: "white"
+                font.pixelSize: FontUtils.sizeToPixels("medium")
+            }
+
+            TextField {
+                id: passphrase
+
+                height: Units.gu(4)
+
+                anchors.left: parent.left
+                anchors.right: parent.right
+
+                font.pixelSize: FontUtils.sizeToPixels("medium")
+                echoMode: TextInput.Password
+                // passwordCharacter: "\u2022"
+
+                onActiveFocusChanged: {
+                    if (passphrase.focus)
+                        Qt.inputMethod.show();
+                    else
+                        Qt.inputMethod.hide();
+                }
+            }
+
+            Label {
+                id: passphraseHint
+                visible: false
+                color: "red"
+                text: "Please enter a passphrase!"
+                font.pixelSize: FontUtils.sizeToPixels("medium")
+            }
         }
+    }
+
+    function connectNetwork() {
+        if (passphrase.length === 0) {
+            passphraseHint.visible = true;
+            return;
+        }
+
+        passphraseHint.visible = false;
+
+        connectNetwork.call(JSON.stringify({
+            ssid: page.ssid,
+            security: {
+                simpleSecurity: {
+                    passKey: passphrase.text
+               }
+            }
+        }));
+
+        pageStack.pop();
     }
 
     Component {
         id: forwardButton
         StackButton {
             text: "Connect"
-            onClicked: {
-                if (passphrase.length === 0) {
-                    passphraseHint.visible = true;
-                    return;
-                }
-
-                passphraseHint.visible = false;
-
-                connectNetwork.call(JSON.stringify({
-                    ssid: page.ssid,
-                    security: {
-                        simpleSecurity: {
-                            passphrase: passphrase.text
-                       }
-                    }
-                }));
-
-                pageStack.pop();
-            }
+            onClicked: page.connectNetwork()
         }
     }
 

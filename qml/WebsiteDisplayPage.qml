@@ -25,7 +25,6 @@ BasePage {
     property string url: ""
 
     customBack: true
-    noTitle: true
 
     WebView {
         id: webView

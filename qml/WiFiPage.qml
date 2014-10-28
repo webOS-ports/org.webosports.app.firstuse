@@ -35,6 +35,17 @@ BasePage {
         method: "setstate"
     }
 
+    Timer {
+        id: autoscanTimer
+        repeat: true
+        running: true
+        triggeredOnStart: true
+        interval: 1000
+        onTriggered: {
+            findNetworks.call("{}");
+        }
+    }
+
     LunaService {
         id: findNetworks
         name: "org.webosports.app.firstuse"
@@ -74,7 +85,30 @@ BasePage {
     Component.onCompleted: {
         // enable WiFi by default
         setState.call(JSON.stringify({"state":"enabled"}));
-        findNetworks.subscribe(JSON.stringify({"subscribe":true}));
+    }
+
+    function connectStateToStr(state) {
+        switch (state) {
+        case "associating":
+        case "associated":
+            return "Connecting ...";
+        default:
+            break;
+        }
+
+        return "";
+    }
+
+    function isConnectingState(state) {
+        switch (state) {
+        case "associating":
+        case "associated":
+            return true;
+        default:
+            break;
+        }
+
+        return false;
     }
 
     ListModel {
@@ -164,6 +198,14 @@ BasePage {
                                 id: connectedImage
                                 source: "images/checkmark.png"
                                 visible: (networkInfo.connectState !== undefined && networkInfo.connectState === "ipConfigured")
+                            }
+
+                            Label {
+                                id: networkStatus
+                                text: connectStateToStr(networkInfo.connectState)
+                                visible: isConnectingState(networkInfo.connectState)
+                                color: "white"
+                                font.pixelSize: FontUtils.sizeToPixels("medium")
                             }
 
                             Image {

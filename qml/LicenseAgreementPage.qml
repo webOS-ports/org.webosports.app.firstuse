@@ -17,6 +17,7 @@
 
 import QtQuick 2.0
 import QtQuick.Controls 1.0
+import QtQuick.Controls.Styles 1.0
 import QtWebKit 3.0
 import LunaNext.Common 0.1
 import "."
@@ -61,27 +62,27 @@ BasePage {
         }
 
         Flickable {
+            id: termsArea
             anchors.left: parent.left
             anchors.right: parent.right
-            height: column.height - termsLabel.height - column.spacing - label1.height
-            contentHeight: contentItem.childrenRect.height
+            height: column.height - label1.height - 2 * column.spacing
+            contentHeight: termsLabel.height
             clip: true
-            focus: true
-            boundsBehavior: (contentHeight > height) ? Flickable.DragAndOvershootBounds : Flickable.StopAtBounds
+
+            flickableDirection: Flickable.VerticalFlick
+            boundsBehavior: Flickable.StopAtBounds
+
             Label {
-                anchors.left: parent.left
-                anchors.right: parent.right
                 id: termsLabel
-                wrapMode: Text.Wrap
+                width: column.width
+                wrapMode: Text.WordWrap
+                textFormat: TextEdit.RichText
+                font.pixelSize: FontUtils.sizeToPixels("medium")
                 color: "white"
-                linkColor: "grey"
-                anchors.fill: parent
-                textFormat: Text.AutoText
                 onLinkActivated: {
                     console.log("Link activated: " + link);
-                    pageStack.push({ item: websiteDisplayPage, properties: { url: link }});
+                    pageStack.push({ item: websiteDisplayPage, properties: { url: link, title: link, titleSize: FontUtils.sizeToPixels("large") }});
                 }
-                font.pixelSize: FontUtils.sizeToPixels("medium")
             }
         }
     }
