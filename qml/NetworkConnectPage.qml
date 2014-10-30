@@ -67,7 +67,7 @@ BasePage {
                 font.pixelSize: FontUtils.sizeToPixels("medium")
             }
 
-            TextField {
+            TextInput {
                 id: passphrase
 
                 height: Units.gu(4)
