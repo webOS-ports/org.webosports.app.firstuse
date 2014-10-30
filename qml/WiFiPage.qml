@@ -22,6 +22,8 @@ import LunaNext.Common 0.1
 import firstuse 1.0
 
 BasePage {
+    id: page
+
     title: "Connect WiFi network"
     forwardButtonSourceComponent: forwardButton
 
@@ -111,6 +113,16 @@ BasePage {
         return false;
     }
 
+    function setErrorMessage(message) {
+        errorMessageLabel.text = message;
+        errorMessageLabel.visible = true;
+    }
+
+    function clearErrorMessage() {
+        errorMessageLabel.text = "";
+        errorMessageLabel.visible = false;
+    }
+
     ListModel {
         id: networksModel
         dynamicRoles: true
@@ -169,15 +181,34 @@ BasePage {
                         height: Units.gu(6)
 
                         onClicked: {
-                            // do nothing if we're already connected
+                            page.clearErrorMessage();
+
+                            // do nothing if we're already connected with the network
                             if (networkInfo.connectState !== undefined &&
                                 networkInfo.connectState === "ipConfigured")
                                 return;
 
-                            if (networkInfo.availableSecurityTypes.indexOf("none") === -1) {
+                            if (networkInfo.profileId !== undefined) {
+                                console.log("Connecting with profile id " + networkInfo.profileId);
+                                connectNetwork.call(JSON.stringify({
+                                    profileId: networkInfo.profileId
+                                }));
+                            }
+                            else if (networkInfo.availableSecurityTypes.indexOf("psk") !== -1 ||
+                                     networkInfo.availableSecurityTypes.indexOf("wep") !== -1) {
+                                console.log("Connecting with network " + networkInfo.ssid);
                                 pageStack.push({ item: networkConnectPage, properties: { ssid: networkInfo.ssid, securityTypes: networkInfo.availableSecurityTypes }});
                             }
-                            else {
+                            else if (networkInfo.availableSecurityTypes.indexOf("ieee8021x") !== -1) {
+                                console.log("Connecting with enterprise security ... NOT SUPPORTED YET!");
+                                page.setErrorMessage("Enterprise security networks are not supported yet");
+                            }
+                            else if (networkInfo.availableSecurityTypes.indexOf("wps") !== -1) {
+                                console.log("Connecting with WPS ... NOT SUPPORTED YET!");
+                                page.setErrorMessage("WPS networks are not supported yet");
+                            }
+                            /* no security types means we have an open network */
+                            else if (networkInfo.availableSecurityTypes.length === 0) {
                                 // we're connecting to an open network so just connect to it
                                 connectNetwork.call(JSON.stringify({
                                     ssid: networkInfo.ssid
@@ -235,6 +266,13 @@ BasePage {
                             }
                         }
                     }
+                }
+
+                Label {
+                    id: errorMessageLabel
+                    text: ""
+                    font.pixelSize: FontUtils.sizeToPixels("medium")
+                    color: "red"
                 }
             }
         }

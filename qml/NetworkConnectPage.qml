@@ -61,13 +61,7 @@ BasePage {
             anchors.fill: parent
             spacing: Units.gu(1)
 
-            Label {
-                text: "Enter passphrase"
-                color: "white"
-                font.pixelSize: FontUtils.sizeToPixels("medium")
-            }
-
-            TextInput {
+            TextField {
                 id: passphrase
 
                 height: Units.gu(4)
@@ -77,7 +71,8 @@ BasePage {
 
                 font.pixelSize: FontUtils.sizeToPixels("medium")
                 echoMode: TextInput.Password
-                passwordCharacter: "•"
+                placeholderText: "Enter passphrase ..."
+                passwordCharacter: "\u2022"
 
                 onActiveFocusChanged: {
                     if (passphrase.focus)
