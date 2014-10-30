@@ -77,7 +77,7 @@ BasePage {
 
                 font.pixelSize: FontUtils.sizeToPixels("medium")
                 echoMode: TextInput.Password
-                // passwordCharacter: "\u2022"
+                passwordCharacter: "•"
 
                 onActiveFocusChanged: {
                     if (passphrase.focus)
