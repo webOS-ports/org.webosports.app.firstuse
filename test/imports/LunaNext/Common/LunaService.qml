@@ -45,9 +45,13 @@ QtObject {
     }
 
     function callWithArguments(arguments) {
+        var uri = service + "/" + method;
+        callFull(uri, arguments, onResponse, onError);
     }
 
     function callWithArgumentsAndCallbacks(args, responseCallback, errorCallback) {
+        var uri = service + "/" + method;
+        callFull(uri, arguments, responseCallback, errorCallback);
     }
 
     function callFull(uri, args, responseCallback, errorCallback) {
@@ -55,6 +59,27 @@ QtObject {
         var parsedArgs = JSON.parse(args);
         if (uri === "luna://com.palm.wifi/connect") {
             var resonse = { returnValue: true };
+            responseCallback({"payload": JSON.stringify(response)});
+        }
+        else if (uri === "luna://com.palm.systemservice/getPreferenceValues") {
+            var response = {
+                "locale": [
+                    { "languageName": "Albanian" },
+                    { "languageName": "Brazil" },
+                    { "languageName": "Swedish" }
+                ]
+            };
+            responseCallback({"payload": JSON.stringify(response)});
+        }
+        else if (uri === "luna://com.palm.wifi/findnetworks") {
+            var response = {
+                "foundNetworks": [
+                    {"networkInfo":{"signalLevel":65,"ssid":"AP1","signalBars":3,"supported":true,"availableSecurityTypes":["psk"]}},
+                    {"networkInfo":{"signalLevel":34,"ssid":"AP2","signalBars":2,"supported":true,"availableSecurityTypes":["none"]}},
+                    {"networkInfo":{"signalLevel":10,"ssid":"AP3","signalBars":1,"supported":true,"availableSecurityTypes":["wep"]}}
+                ],
+                "returnValue":true
+            };
             responseCallback({"payload": JSON.stringify(response)});
         }
         else {

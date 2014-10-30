@@ -22,7 +22,7 @@ Item {
     readonly property real buttonMargin: Units.gu(2)
     readonly property real buttonWidth: (width - buttonMargin * 2) / 2 -
                                         buttonMargin / 2
-    readonly property real topMargin: Units.gu(8)
+    readonly property real topMargin: Units.gu(3)
     readonly property real leftMargin: Units.gu(2)
     readonly property real rightMargin: Units.gu(2)
 
