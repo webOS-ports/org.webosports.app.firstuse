@@ -20,14 +20,13 @@ import QtQuick.Controls 1.0
 import QtQuick.Layouts 1.0
 import LunaNext.Common 0.1
 import firstuse 1.0
-import "ConfigurationStore.js" as ConfigurationStore
 
 BasePage {
     title: "Select your Country"
     forwardButtonSourceComponent: forwardButton
 
-    property variant currentLocale: null
-    property int currentCountryIndex: -1
+    property variant currentRegion: null
+    property int currentRegionIndex: -1
 
     LunaService {
         id: getPreference
@@ -46,7 +45,7 @@ BasePage {
     }
 
     LunaService {
-        id: fetchAvailableCountries
+        id: fetchAvailableRegions
         name: "org.webosports.app.firstuse"
         usePrivateBus: true
         service: "luna://com.palm.systemservice"
@@ -55,70 +54,49 @@ BasePage {
         onResponse: function (message) {
             console.log("response: " + message.payload);
             var response = JSON.parse(message.payload);
-            languageModel.clear();
-            var numCountries = 0;
-            if (response.locale && response.locale.length > 0) {
-                for (var n = 0; n < response.locale.length; n++) {
-                    var locale = response.locale[n];
+            regionModel.clear();
+            if (response.region && response.region.length > 0) {
+                for (var n = 0; n < response.region.length; n++) {
+                    var region = response.region[n];
 
-                    if (locale.languageCode === ConfigurationStore.selectedLanguageCode) {
-                        if (locale.countries && locale.countries.length > 0) {
-                            for (var m = 0; m < locale.countries.length; m++) {
-                                var country = locale.countries[m];
+                    console.log("Current region " + region.countryName);
 
-                                if (country.countryCode === currentLocale.countryCode) {
-                                    if (currentCountryIndex === -1) {
-                                        console.log("Current country is " + country.countryCode);
-                                        currentCountryIndex = numCountries;
-                                    }
-                                }
+                    if (currentRegion !== null && currentRegion.countryCode === region.countryCode)
+                        currentRegionIndex = n;
 
-                                languageModel.append({
-                                    countryName: country.countryName,
-                                    countryCode: country.countryCode
-                                });
-
-                                numCountries++;
-                            }
-                        }
-                    }
+                    regionModel.append({
+                        countryName: region.countryName,
+                        countryCode: region.countryCode
+                    });
                 }
             }
 
-            languageList.currentIndex = currentCountryIndex;
-            languageList.positionViewAtIndex(currentCountryIndex, ListView.Center);
+            regionList.currentIndex = currentRegionIndex;
+            regionList.positionViewAtIndex(currentRegionIndex, ListView.Center);
         }
     }
 
     Component.onCompleted: {
-        getPreference.call(JSON.stringify({keys: ["locale"]}), function (message) {
+        getPreference.call(JSON.stringify({keys: ["region"]}), function (message) {
             var response = JSON.parse(message.payload);
 
             console.log("response " + message.payload);
 
-            if (response.locale !== undefined) {
-                currentLocale = response.locale;
-                console.log("Current locale " + JSON.stringify(currentLocale));
+            if (response.region !== undefined) {
+                currentRegion = response.region;
+                console.log("Current region " + JSON.stringify(currentRegion));
             }
 
             // now we can fetch all possible values and setup our model
-            fetchAvailableCountries.call(JSON.stringify({key: "locale"}));
+            fetchAvailableRegions.call(JSON.stringify({key: "region"}));
         }, function (message) { });
     }
 
-    function applySelectedLocale() {
+    function applySelectedRegion(countryCode, countryName) {
         var request = {
-            locale: {
-                "languageCode": ConfigurationStore.selectedLanguageCode,
-                "countryCode": ConfigurationStore.selectedCountryCode,
-                "phoneRegion": {
-                    "countryCode": ConfigurationStore.selectedCountryCode,
-                    "countryName": ConfigurationStore.selectedCountryName
-                },
-                "region": {
-                    "countryCode": ConfigurationStore.selectedCountryCode,
-                    "countryName": ConfigurationStore.selectedCountryName
-                }
+            region: {
+                "countryName": countryName,
+                "countryCode": countryCode,
             }
         };
 
@@ -126,7 +104,7 @@ BasePage {
     }
 
     ListModel {
-        id: languageModel
+        id: regionModel
         dynamicRoles: true
     }
 
@@ -136,12 +114,12 @@ BasePage {
         spacing: Units.gu(1)
 
         ListView {
-            id: languageList
+            id: regionList
             anchors.left: parent.left
             anchors.right: parent.right
             height: column.height - column.spacing
 
-            model: languageModel
+            model: regionModel
 
             delegate: MouseArea {
                 id: delegate
@@ -157,11 +135,8 @@ BasePage {
                     font.bold: delegate.ListView.isCurrentItem
                 }
                 onClicked: {
-                    languageList.currentIndex = index;
-                    ConfigurationStore.selectedCountryCode = countryCode;
-                    ConfigurationStore.selectedCountryName = countryName;
-                    console.log("selected country is now " + ConfigurationStore.selectedCountryCode);
-                    applySelectedLocale();
+                    regionList.currentIndex = index;
+                    applySelectedRegion(countryCode, countryName);
                 }
             }
         }

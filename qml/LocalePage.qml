@@ -20,14 +20,15 @@ import QtQuick.Controls 1.0
 import QtQuick.Layouts 1.0
 import LunaNext.Common 0.1
 import firstuse 1.0
-import "ConfigurationStore.js" as ConfigurationStore
 
 BasePage {
+    id: localePage
+
     title: "Select your Language"
     forwardButtonSourceComponent: forwardButton
 
     property variant currentLocale: null
-    property int currentLanguageIndex: 0
+    property int currentLocaleIndex: 0
 
     LunaService {
         id: getPreference
@@ -38,42 +39,74 @@ BasePage {
     }
 
     LunaService {
-        id: fetchAvailableLanguages
+        id: fetchAvailableLocales
         name: "org.webosports.app.firstuse"
         usePrivateBus: true
         service: "luna://com.palm.systemservice"
         method: "getPreferenceValues"
 
         onResponse: function (message) {
-            console.log("response: " + message.payload);
             var response = JSON.parse(message.payload);
-            languageModel.clear();
+            localeModel.clear();
+
             if (response.locale && response.locale.length > 0) {
+                var currentIndex = 0;
                 for (var n = 0; n < response.locale.length; n++) {
                     var locale = response.locale[n];
 
-                    if (locale.languageCode === currentLocale.languageCode) {
-                        console.log("Current locale is " + locale.languageCode);
-                        currentLanguageIndex = n;
-                    }
+                    for (var m = 0; m < locale.countries.length; m++) {
+                        var country = locale.countries[m];
 
-                    languageModel.append({
-                        languageName: locale.languageName,
-                        languageCode: locale.languageCode
-                    });
+                        if (locale.languageCode === currentLocale.languageCode &&
+                            country.countryCode === currentLocale.countryCode)
+                        {
+                            console.log("Current locale is " + locale.languageName + " (" + country.countryName + ")");
+                            currentLocaleIndex = currentIndex;
+                        }
+
+                        localeModel.append({
+                            languageName: locale.languageName,
+                            languageCode: locale.languageCode,
+                            countryName: country.countryName,
+                            countryCode: country.countryCode
+                        });
+
+                        currentIndex++;
+                    }
                 }
             }
 
-            languageList.currentIndex = currentLanguageIndex;
-            languageList.positionViewAtIndex(currentLanguageIndex, ListView.Center);
+            localeList.currentIndex = currentLocaleIndex;
+            localeList.positionViewAtIndex(currentLocaleIndex, ListView.Center);
         }
+    }
+
+    LunaService {
+        id: setPreferences
+        name: "org.webosports.app.firstuse"
+        usePrivateBus: true
+        service: "luna://com.palm.systemservice"
+        method: "setPreferences"
+    }
+
+    function applySelectedLocale(languageCode, countryCode, countryName) {
+        var request = {
+            locale: {
+                "languageCode": languageCode,
+                "countryCode": countryCode,
+                "phoneRegion": {
+                    "countryCode": countryCode,
+                    "countryName": countryName
+                }
+            }
+        };
+
+        setPreferences.call(JSON.stringify(request));
     }
 
     Component.onCompleted: {
         getPreference.call(JSON.stringify({keys: ["locale"]}), function (message) {
             var response = JSON.parse(message.payload);
-
-            console.log("response " + message.payload);
 
             if (response.locale !== undefined) {
                 currentLocale = response.locale;
@@ -81,12 +114,12 @@ BasePage {
             }
 
             // now we can fetch all possible values and setup our model
-            fetchAvailableLanguages.call(JSON.stringify({key: "locale"}));
+            fetchAvailableLocales.call(JSON.stringify({key: "locale"}));
         }, function (message) { });
     }
 
     ListModel {
-        id: languageModel
+        id: localeModel
         dynamicRoles: true
     }
 
@@ -96,12 +129,12 @@ BasePage {
         spacing: Units.gu(1)
 
         ListView {
-            id: languageList
+            id: localeList
             anchors.left: parent.left
             anchors.right: parent.right
             height: column.height - column.spacing
 
-            model: languageModel
+            model: localeModel
 
             delegate: MouseArea {
                 id: delegate
@@ -113,13 +146,12 @@ BasePage {
                     anchors.fill: parent
                     color: "white"
                     font.pixelSize: FontUtils.sizeToPixels("large")
-                    text: languageName
+                    text: languageName + " (" + countryName + ")"
                     font.bold: delegate.ListView.isCurrentItem
                 }
                 onClicked: {
-                    languageList.currentIndex = index;
-                    ConfigurationStore.selectedLanguageCode = languageCode;
-                    console.log("selected language is now " + ConfigurationStore.selectedLanguageCode);
+                    localeList.currentIndex = index;
+                    applySelectedLocale(languageCode, countryCode, countryName);
                 }
             }
         }
