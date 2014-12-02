@@ -57,13 +57,13 @@ BasePage {
         method: "findnetworks"
 
         onResponse: function (message) {
-            console.log("response: " + message.payload);
+            // console.log("response: " + message.payload);
             var response = JSON.parse(message.payload);
             networksModel.clear();
             if (response.foundNetworks && response.foundNetworks.length > 0) {
                 for (var n = 0; n < response.foundNetworks.length; n++) {
                     var network = response.foundNetworks[n];
-                    console.log("Adding network " + network);
+                    // console.log("Adding network " + network);
                     networksModel.append(network);
                     if (network.networkInfo.connectState !== undefined &&
                         network.networkInfo.connectState === "ipConfigured")
@@ -114,22 +114,12 @@ BasePage {
         return false;
     }
 
-    function setErrorMessage(message) {
-        errorMessageLabel.text = message;
-        errorMessageLabel.visible = true;
-    }
-
-    function clearErrorMessage() {
-        errorMessageLabel.text = "";
-        errorMessageLabel.visible = false;
-    }
-
     ListModel {
         id: networksModel
         dynamicRoles: true
     }
 
-    Column {
+    ColumnLayout {
         id: column
         anchors.fill: content
         spacing: Units.gu(1)
@@ -141,6 +131,8 @@ BasePage {
             color: "white"
             text: "Select network you want to connect to"
             font.pixelSize: FontUtils.sizeToPixels("medium")
+            Layout.fillHeight: false
+            Layout.preferredHeight: label.contentHeight
         }
 
         Component {
@@ -148,132 +140,127 @@ BasePage {
             NetworkConnectPage { }
         }
 
-        Flickable {
+        ListView {
+            id: networkList
+
             anchors.left: parent.left
             anchors.right: parent.right
-            height: column.height - label.height - column.spacing
-            contentHeight: contentItem.childrenRect.height
+            Layout.fillHeight: true
             clip: true
-            flickDeceleration: 1500 * Units.gridUnit / 8
-            maximumFlickVelocity: 2500 * Units.gridUnit / 8
-            boundsBehavior: (contentHeight > height) ? Flickable.DragAndOvershootBounds : Flickable.StopAtBounds
 
-            Column {
-                anchors.left: parent.left
-                anchors.right: parent.right
+            model: networksModel
 
-                Label {
+            header: Label {
                     text: "Searching for networks ..."
                     font.pixelSize: FontUtils.sizeToPixels("medium")
                     color: "white"
                     visible: networksModel.count === 0
                 }
 
-                Repeater {
-                    id: networkList
+            footer: Label {
+                text: ""
+                font.pixelSize: FontUtils.sizeToPixels("medium")
+                color: "red"
+            }
 
-                    visible: networksModel.count > 0
+            function setErrorMessage(message) {
+                footerItem.text = message;
+                footerItem.visible = true;
+            }
 
-                    model: networksModel
+            function clearErrorMessage() {
+                footerItem.text = "";
+                footerItem.visible = false;
+            }
 
-                    delegate: MouseArea {
-                        anchors.right: parent.right
-                        anchors.left: parent.left
-                        height: Units.gu(6)
+            delegate: MouseArea {
+                width: networkList.width
+                height: Units.gu(6)
 
-                        onClicked: {
-                            page.clearErrorMessage();
+                onClicked: {
+                    networkList.clearErrorMessage();
 
-                            // do nothing if we're already connected with the network
-                            if (networkInfo.connectState !== undefined &&
-                                networkInfo.connectState === "ipConfigured")
-                                return;
+                    // do nothing if we're already connected with the network
+                    if (networkInfo.connectState !== undefined &&
+                        networkInfo.connectState === "ipConfigured")
+                        return;
 
-                            if (networkInfo.profileId !== undefined) {
-                                console.log("Connecting with profile id " + networkInfo.profileId);
-                                connectNetwork.call(JSON.stringify({
-                                    profileId: networkInfo.profileId
-                                }));
-                            }
-                            else if (networkInfo.availableSecurityTypes.indexOf("psk") !== -1 ||
-                                     networkInfo.availableSecurityTypes.indexOf("wep") !== -1) {
-                                console.log("Connecting with network " + networkInfo.ssid);
-                                pageStack.push({ item: networkConnectPage, properties: { ssid: networkInfo.ssid, securityTypes: networkInfo.availableSecurityTypes }});
-                            }
-                            else if (networkInfo.availableSecurityTypes.indexOf("ieee8021x") !== -1) {
-                                console.log("Connecting with enterprise security ... NOT SUPPORTED YET!");
-                                page.setErrorMessage("Enterprise security networks are not supported yet");
-                            }
-                            else if (networkInfo.availableSecurityTypes.indexOf("wps") !== -1) {
-                                console.log("Connecting with WPS ... NOT SUPPORTED YET!");
-                                page.setErrorMessage("WPS networks are not supported yet");
-                            }
-                            /* no security types means we have an open network */
-                            else if (networkInfo.availableSecurityTypes.length === 0) {
-                                // we're connecting to an open network so just connect to it
-                                connectNetwork.call(JSON.stringify({
-                                    ssid: networkInfo.ssid
-                                }));
-                            }
-                        }
-
-                        RowLayout {
-                            anchors.fill: parent
-                            Text {
-                                text: networkInfo.ssid
-                                font.pixelSize: FontUtils.sizeToPixels("medium")
-                                color: "white"
-                                Layout.fillWidth: true
-                            }
-
-                            Image {
-                                id: connectedImage
-                                source: "images/checkmark.png"
-                                visible: (networkInfo.connectState !== undefined && networkInfo.connectState === "ipConfigured")
-                            }
-
-                            Label {
-                                id: networkStatus
-                                text: connectStateToStr(networkInfo.connectState)
-                                visible: isConnectingState(networkInfo.connectState)
-                                color: "white"
-                                font.pixelSize: FontUtils.sizeToPixels("medium")
-                            }
-
-                            Image {
-                                id: secureImage
-                                source: "images/secure-icon.png"
-                                visible: networkInfo.availableSecurityTypes !== undefined &&
-                                         networkInfo.availableSecurityTypes.length > 0 &&
-                                         networkInfo.availableSecurityTypes[0] !== "none"
-                            }
-
-                            Image {
-                                id: signalImage
-                                source: determineSignalImage()
-                                function determineSignalImage() {
-                                    switch (networkInfo.signalBars) {
-                                    case 1:
-                                        return "images/wifi-icon-low.png";
-                                    case 2:
-                                        return "images/wifi-icon-average.png";
-                                    case 3:
-                                        return "images/wifi-icon-excellent.png";
-                                    default:
-                                        break;
-                                    }
-                                    return "images/wifi-icon-none.png";
-                                }
-                            }
-                        }
+                    if (networkInfo.profileId !== undefined) {
+                        console.log("Connecting with profile id " + networkInfo.profileId);
+                        connectNetwork.call(JSON.stringify({
+                            profileId: networkInfo.profileId
+                        }));
+                    }
+                    else if (networkInfo.availableSecurityTypes.indexOf("psk") !== -1 ||
+                             networkInfo.availableSecurityTypes.indexOf("wep") !== -1) {
+                        console.log("Connecting with network " + networkInfo.ssid);
+                        pageStack.push({ item: networkConnectPage, properties: { ssid: networkInfo.ssid, securityTypes: networkInfo.availableSecurityTypes }});
+                    }
+                    else if (networkInfo.availableSecurityTypes.indexOf("ieee8021x") !== -1) {
+                        console.log("Connecting with enterprise security ... NOT SUPPORTED YET!");
+                        networkList.setErrorMessage("Enterprise security networks are not supported yet");
+                    }
+                    else if (networkInfo.availableSecurityTypes.indexOf("wps") !== -1) {
+                        console.log("Connecting with WPS ... NOT SUPPORTED YET!");
+                        networkList.setErrorMessage("WPS networks are not supported yet");
+                    }
+                    /* no security types means we have an open network */
+                    else if (networkInfo.availableSecurityTypes.length === 0) {
+                        // we're connecting to an open network so just connect to it
+                        connectNetwork.call(JSON.stringify({
+                            ssid: networkInfo.ssid
+                        }));
                     }
                 }
 
-                Label {
-                    id: errorMessageLabel
-                    text: ""
-                    font.pixelSize: FontUtils.sizeToPixels("medium")
-                    color: "red"
+                RowLayout {
+                    anchors.fill: parent
+                    Text {
+                        text: networkInfo.ssid
+                        font.pixelSize: FontUtils.sizeToPixels("medium")
+                        color: "white"
+                        Layout.fillWidth: true
+                    }
+
+                    Image {
+                        id: connectedImage
+                        source: "images/checkmark.png"
+                        visible: (networkInfo.connectState !== undefined && networkInfo.connectState === "ipConfigured")
+                    }
+
+                    Label {
+                        id: networkStatus
+                        text: connectStateToStr(networkInfo.connectState)
+                        visible: isConnectingState(networkInfo.connectState)
+                        color: "white"
+                        font.pixelSize: FontUtils.sizeToPixels("medium")
+                    }
+
+                    Image {
+                        id: secureImage
+                        source: "images/secure-icon.png"
+                        visible: networkInfo.availableSecurityTypes !== undefined &&
+                                 networkInfo.availableSecurityTypes.length > 0 &&
+                                 networkInfo.availableSecurityTypes[0] !== "none"
+                    }
+
+                    Image {
+                        id: signalImage
+                        source: determineSignalImage()
+                        function determineSignalImage() {
+                            switch (networkInfo.signalBars) {
+                            case 1:
+                                return "images/wifi-icon-low.png";
+                            case 2:
+                                return "images/wifi-icon-average.png";
+                            case 3:
+                                return "images/wifi-icon-excellent.png";
+                            default:
+                                break;
+                            }
+                            return "images/wifi-icon-none.png";
+                        }
+                    }
                 }
             }
         }
