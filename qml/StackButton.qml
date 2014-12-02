@@ -27,7 +27,6 @@ BorderImage {
 
     signal clicked()
 
-    width: label.width
     height: label.height + Units.gu(4)
 
     source: backArrow ? "images/buttongrey.png" : "images/button-blue.png"
