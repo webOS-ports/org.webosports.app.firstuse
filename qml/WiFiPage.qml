@@ -31,6 +31,22 @@ BasePage {
     property string stackButtonText: "Skip"
 
     LunaService {
+        id: setWanProp
+        name: "org.webosports.app.firstuse"
+        usePrivateBus: true
+        service: "luna://com.palm.wan"
+        method: "set"
+
+        onResponse: {
+            var response = JSON.parse(message.payload);
+            if (!response.returnValue)
+                console.error("Failed to enable WAN connectivity");
+            else
+                console.log("Successfully enabled WAN connectivity");
+        }
+    }
+
+    LunaService {
         id: setState
         name: "org.webosports.app.firstuse"
         usePrivateBus: true
@@ -88,6 +104,7 @@ BasePage {
     Component.onCompleted: {
         // enable WiFi by default
         setState.call(JSON.stringify({"state":"enabled"}));
+        setWanProp.call(JSON.stringify({"disablewan":"off"}));
     }
 
     function connectStateToStr(state) {
