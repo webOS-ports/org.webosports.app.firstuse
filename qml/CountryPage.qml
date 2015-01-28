@@ -178,8 +178,8 @@ BasePage {
     function applySelectedRegion(countryCode, countryName) {
         var request = {
             region: {
-                countryName: countryName,
-                countryCode: countryCode
+                "countryName": countryName,
+                "countryCode": countryCode
             }
         }
 
