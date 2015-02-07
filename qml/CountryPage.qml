@@ -1,7 +1,6 @@
-
 /*
 * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
-* Copyright (C) 2015 Herman van Hazendnk <github.com@herrie.org>
+* Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -23,80 +22,17 @@ import QtQuick.Layouts 1.0
 import LunaNext.Common 0.1
 import firstuse 1.0
 
+
 BasePage {
     title: "Select your Country"
     forwardButtonSourceComponent: forwardButton
 
     property variant currentRegion: null
-    property string mccCountryCode: ""
     property int currentRegionIndex: -1
 
-    Item {
-        id: mapper
-
-        ListModel {
-            id: dataModel
-        }
-
-        function loadData() {
-            var xhr = new XMLHttpRequest
-            var jsonSource = ""
-            xhr.open("GET", "file:///etc/palm/mccInfo.json")
-            xhr.onreadystatechange = function () {
-                if (xhr.readyState === XMLHttpRequest.DONE)
-                    updateJSONModel(xhr.responseText)
-            }
-            xhr.send()
-        }
-
-        function updateJSONModel(source) {
-            dataModel.clear()
-
-            if (source === "") {
-                return
-            }
-
-            var objectArray = JSON.parse(source)
-            for (var key in objectArray) {
-                var jo = objectArray[key]
-                dataModel.append(jo)
-            }
-
-            handleUpdatedModel()
-        }
-
-        property variant __currentCall: null
-
-        function handleUpdatedModel() {
-            if (__currentCall) {
-                __currentCall.cancel()
-            } else {
-                __currentCall = connectNetwork.subscribe(JSON.stringify({
-                                                                            subscribe: true
-                                                                        }))
-            }
-        }
-    }
-
-    LunaService {
-        id: connectNetwork
-        name: "org.webosports.app.firstuse"
-        usePrivateBus: true
-        service: "luna://com.palm.telephony"
-        method: "networkIdQuery"
-
-        onResponse: function (message) {
-            var response = JSON.parse(message.payload)
-            var mcc = parseInt(response.extended.mccmnc.substring(0, 3))
-            for (var n = 0; n < dataModel.count; n++) {
-                var entry = dataModel.get(n)
-                if (mcc === entry.mcc) {
-                    mccCountryCode = entry.CountryCode.toLowerCase()
-                    console.log("We found countrycode: "+mccCountryCode+" for MCC: "+response.extended.mccmnc.substring(0, 3))
-                }
-            }
-            getRegions()
-        }
+    NetworkIdCountryMapper
+    {
+        id: networkIdCountryMapper
     }
 
     LunaService {
@@ -130,8 +66,8 @@ BasePage {
                     var region = response.region[n]
 
                     //First try to determine country based on MCC else based on preferences we got
-                    if (mccCountryCode !== null
-                            && mccCountryCode === region.countryCode) {
+                    if (networkIdCountryMapper.mccCountryCode !== null
+                            && networkIdCountryMapper.mccCountryCode === region.countryCode) {
                         currentRegionIndex = n
                     } else if (currentRegion !== null
                                && currentRegion.countryCode === region.countryCode
@@ -164,7 +100,7 @@ BasePage {
             currentRegion = response.region
         }
         //We want to see if we can get the country based on the MCC of our sim card
-        mapper.loadData()
+        networkIdCountryMapper.loadData()
     }
 
     function getPreferencesFailure(message) {
@@ -172,7 +108,7 @@ BasePage {
         //No region found, default to US
         currentRegion = '{"countryName":"United States","countryCode":"us"}'
         //We want to see if we can get the country based on the MCC of our sim card
-        mapper.loadData()
+        networkIdCountryMapper.loadData()
     }
 
     function applySelectedRegion(countryCode, countryName) {
@@ -186,7 +122,7 @@ BasePage {
         setPreferences.call(JSON.stringify(request))
     }
 
-    function getRegions() {
+    function retrieveRegions() {
         // now we can fetch all possible values and setup our model
         fetchAvailableRegions.call(JSON.stringify({
                                                       key: "region"
@@ -198,10 +134,22 @@ BasePage {
         dynamicRoles: true
     }
 
+    Timer
+    {
+        id: retrieveRegionTimer
+        running: networkIdCountryMapper.foundCountryMCC
+        repeat: false
+        onTriggered:
+        {
+            retrieveRegions();
+        }
+    }
+
     Column {
         id: column
         anchors.fill: content
         spacing: Units.gu(1)
+
 
         ListView {
             id: regionList
