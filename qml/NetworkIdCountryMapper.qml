@@ -38,6 +38,7 @@ Item {
                 var entry = dataModel.get(n)
                 if (mcc === entry.mcc) {
                     mccCountryCode = entry.CountryCode.toLowerCase()
+                    pageStack.mccOffsetFromUTC = entry.offsetFromUTC
                     foundCountryMCC = true
                     console.log("Found mcc: " + mcc + ", mccCountryCode: " + mccCountryCode)
                 }
