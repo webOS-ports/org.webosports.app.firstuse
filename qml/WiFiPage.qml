@@ -37,12 +37,15 @@ BasePage {
         service: "luna://com.palm.wan"
         method: "set"
 
-        onResponse: {
+        onResponse: function(message){
             var response = JSON.parse(message.payload);
-            if (!response.returnValue)
+            if (!response.returnValue){
                 console.error("Failed to enable WAN connectivity");
-            else
+            }
+            else {
                 console.log("Successfully enabled WAN connectivity");
+            }
+
         }
     }
 

@@ -26,7 +26,7 @@ Window {
     width: Settings.displayWidth
     height: Settings.displayHeight
 
-    property variant pageList: [ "Welcome", "Locale", "Country", "WiFi", "LicenseAgreement", "Finished" ]
+    property variant pageList: [ "Welcome", "Locale", "Country", "TimeZone", "WiFi", "LicenseAgreement", "Finished" ]
     property int currentPage: 0
 
     Component.onCompleted: {
@@ -42,6 +42,7 @@ Window {
     }
 
     StackView {
+        property int mccOffsetFromUTC: -1
         id: pageStack
         anchors.fill: parent
 
