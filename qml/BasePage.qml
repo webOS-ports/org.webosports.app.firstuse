@@ -67,7 +67,7 @@ Item {
         wrapMode: Text.Wrap
         text: title
         color: "white"
-        font.pixelSize: Units.gu(4)
+        font.pixelSize: Units.gu(3.9)
         visible: !noTitle
     }
 
