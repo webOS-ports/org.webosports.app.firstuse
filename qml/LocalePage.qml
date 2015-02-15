@@ -31,7 +31,7 @@ BasePage {
     property variant currentLocale: null
     property int currentLocaleIndex: 0
 
-	NetworkIdCountryMapper {
+    NetworkIdCountryMapper {
         id: networkIdCountryMapper
     }
 	
@@ -110,7 +110,7 @@ BasePage {
     }
 
     Component.onCompleted: {
-		networkIdCountryMapper.loadData()
+        networkIdCountryMapper.loadData()
         getPreference.call(JSON.stringify({keys: ["locale"]}), function (message) {
             var response = JSON.parse(message.payload);
 

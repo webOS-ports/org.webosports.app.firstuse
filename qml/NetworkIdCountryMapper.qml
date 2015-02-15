@@ -50,7 +50,7 @@ Item {
     }
 
     function loadData() {
-		var xhr = new XMLHttpRequest
+        var xhr = new XMLHttpRequest
         var jsonSource = ""
         xhr.open("GET", "file:///etc/palm/mccInfo.json")
         xhr.onreadystatechange = function () {
