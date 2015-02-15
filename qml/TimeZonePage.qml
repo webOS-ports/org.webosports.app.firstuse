@@ -82,7 +82,7 @@ BasePage {
                                     currentTimezoneIndexPreferredTemp = n
                                 }
                                 //Check if the difference for the current timezone is less compared to the previous difference stored
-                                else if((timezone.offsetFromUTC-GlobalState	.mccOffsetFromUTC)< currentDifference){
+                                else if((timezone.offsetFromUTC-GlobalState.mccOffsetFromUTC)< currentDifference){
                                     currentDifference = Math.abs(timezone.offsetFromUTC-GlobalState.mccOffsetFromUTC)
                                     currentTimezoneIndexPreferredTemp = n
                                 }
@@ -151,7 +151,6 @@ BasePage {
                 else {
                     timezoneList.currentIndex = currentTimezoneIndexPreferredTemp
                     timezoneList.positionViewAtIndex(currentTimezoneIndexPreferredTemp, ListView.Center)
-
                 }
             }
             //We prefer the closest match

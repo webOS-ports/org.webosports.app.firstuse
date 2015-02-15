@@ -86,7 +86,7 @@ BasePage {
     }
 
     Component.onCompleted: {
-		getPreference.call(JSON.stringify({
+        getPreference.call(JSON.stringify({
                                               keys: ["region"]
                                           }), getPreferencesSuccess,
                            getPreferencesFailure)
@@ -100,8 +100,6 @@ BasePage {
 		fetchAvailableRegions.call(JSON.stringify({
                                                       key: "region"
                                                   }))
-        //We want to see if we can get the country based on the MCC of our sim card
-        
     }
 
     function getPreferencesFailure(message) {
