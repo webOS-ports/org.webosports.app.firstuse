@@ -31,6 +31,10 @@ BasePage {
     property variant currentLocale: null
     property int currentLocaleIndex: 0
 
+    NetworkIdCountryMapper {
+        id: networkIdCountryMapper
+    }
+	
     LunaService {
         id: getPreference
         name: "org.webosports.app.firstuse"
@@ -106,6 +110,7 @@ BasePage {
     }
 
     Component.onCompleted: {
+        networkIdCountryMapper.loadData()
         getPreference.call(JSON.stringify({keys: ["locale"]}), function (message) {
             var response = JSON.parse(message.payload);
 

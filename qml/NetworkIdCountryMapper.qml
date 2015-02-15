@@ -23,8 +23,6 @@ import LuneOS.Service 1.0
 import "js/GlobalState.js" as GlobalState
 
 Item {
-    property string mccCountryCode: ""
-    property bool foundCountryMCC: false
 
     LunaService {
         id: fetchNetworkId
@@ -39,10 +37,9 @@ Item {
             for (var n = 0; n < dataModel.count; n++) {
                 var entry = dataModel.get(n)
                 if (mcc === entry.mcc) {
-                    mccCountryCode = entry.CountryCode.toLowerCase()
+                    GlobalState.mccCountryCode = entry.CountryCode.toLowerCase()
                     GlobalState.mccOffsetFromUTC = entry.offsetFromUTC
-                    foundCountryMCC = true
-                    console.log("Found mcc: " + mcc + ", mccCountryCode: " + mccCountryCode)
+                    console.log("Found mcc: " + mcc + ", mccCountryCode: " + GlobalState.mccCountryCode)
                 }
             }
         }
