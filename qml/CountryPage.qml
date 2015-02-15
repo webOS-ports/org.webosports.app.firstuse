@@ -1,4 +1,3 @@
-
 /*
 * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
 * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
@@ -22,6 +21,7 @@ import QtQuick.Layouts 1.0
 import LunaNext.Common 0.1
 import LuneOS.Service 1.0
 import firstuse 1.0
+import "js/GlobalState.js" as GlobalState
 
 BasePage {
     title: "Select your Country"
@@ -29,10 +29,6 @@ BasePage {
 
     property variant currentRegion: null
     property int currentRegionIndex: -1
-
-    NetworkIdCountryMapper {
-        id: networkIdCountryMapper
-    }
 
     LunaService {
         id: getPreference
@@ -65,8 +61,8 @@ BasePage {
                     var region = response.region[n]
 
                     //First try to determine country based on MCC else based on preferences we got
-                    if (networkIdCountryMapper.mccCountryCode !== null
-                            && networkIdCountryMapper.mccCountryCode === region.countryCode) {
+                    if (GlobalState.mccCountryCode !== null
+                            && GlobalState.mccCountryCode === region.countryCode) {
                         currentRegionIndex = n
                         //We need to make sure we store the preferencs here right away, otherwise they might not get stored due to the fact we don't need to select anything
                         applySelectedRegion(region.countryCode,
@@ -90,7 +86,7 @@ BasePage {
     }
 
     Component.onCompleted: {
-        getPreference.call(JSON.stringify({
+		getPreference.call(JSON.stringify({
                                               keys: ["region"]
                                           }), getPreferencesSuccess,
                            getPreferencesFailure)
@@ -101,8 +97,11 @@ BasePage {
         if (response.region !== undefined) {
             currentRegion = response.region
         }
+		fetchAvailableRegions.call(JSON.stringify({
+                                                      key: "region"
+                                                  }))
         //We want to see if we can get the country based on the MCC of our sim card
-        networkIdCountryMapper.loadData()
+        
     }
 
     function getPreferencesFailure(message) {
@@ -124,25 +123,9 @@ BasePage {
         setPreferences.call(JSON.stringify(request))
     }
 
-    function retrieveRegions() {
-        // now we can fetch all possible values and setup our model
-        fetchAvailableRegions.call(JSON.stringify({
-                                                      key: "region"
-                                                  }))
-    }
-
     ListModel {
         id: regionModel
         dynamicRoles: true
-    }
-
-    Timer {
-        id: retrieveRegionTimer
-        running: networkIdCountryMapper.foundCountryMCC
-        repeat: false
-        onTriggered: {
-            retrieveRegions()
-        }
     }
 
     Column {

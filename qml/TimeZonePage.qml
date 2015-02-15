@@ -71,7 +71,6 @@ BasePage {
                         //For countries with multiple timezones, we need to have the preferred one
                         if(timezone.preferred) {
                             //Sometimes we have multiple preferred timezones per country, we need to make sure to pick the one with the right offset based on mcc
-                            console.log("Herrie GlobalState.mccOffsetFromUTC: "+GlobalState.mccOffsetFromUTC)
                             if(timezone.offsetFromUTC === GlobalState.mccOffsetFromUTC) {
                                 currentTimezoneIndexPreferredOffset = n
                             }
@@ -79,12 +78,12 @@ BasePage {
                             else {
                                 //Check if we already calculated a difference between a timezone and offset based on mcc
                                 if(currentDifference == -1){
-                                    currentDifference = Math.abs(timezone.offsetFromUTC-pageStack.mccOffsetFromUTC)
+                                    currentDifference = Math.abs(timezone.offsetFromUTC-GlobalState.mccOffsetFromUTC)
                                     currentTimezoneIndexPreferredTemp = n
                                 }
                                 //Check if the difference for the current timezone is less compared to the previous difference stored
-                                else if((timezone.offsetFromUTC-pageStack.mccOffsetFromUTC)< currentDifference){
-                                    currentDifference = Math.abs(timezone.offsetFromUTC-pageStack.mccOffsetFromUTC)
+                                else if((timezone.offsetFromUTC-GlobalState	.mccOffsetFromUTC)< currentDifference){
+                                    currentDifference = Math.abs(timezone.offsetFromUTC-GlobalState.mccOffsetFromUTC)
                                     currentTimezoneIndexPreferredTemp = n
                                 }
                             }
@@ -180,6 +179,11 @@ BasePage {
         if (response.timeZone !== undefined) {
             currentTimezone = response.timeZone
         }
+		
+        // now we can fetch all possible values and setup our model
+        fetchAvailableTimezones.call(JSON.stringify({
+                                                      key: "timeZone"
+                                                  }))
     }
 
     function getPreferencesFailure(message) {
@@ -202,27 +206,9 @@ BasePage {
         setPreferences.call(JSON.stringify(request))
     }
 
-    function retrieveTimezones() {
-        // now we can fetch all possible values and setup our model
-        fetchAvailableTimezones.call(JSON.stringify({
-                                                      key: "timeZone"
-                                                  }))
-    }
-
     ListModel {
         id: timezoneModel
         dynamicRoles: true
-    }
-
-    Timer
-    {
-        id: retrieveTimezonesTimer
-        running: true
-        repeat: false
-        onTriggered:
-        {
-            retrieveTimezones();
-        }
     }
 
     Column {
