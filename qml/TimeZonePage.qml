@@ -16,7 +16,7 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 
-import QtQuick 2.0
+import QtQuick 2.3
 import QtQuick.Controls 1.0
 import QtQuick.Layouts 1.0
 import LunaNext.Common 0.1
@@ -89,6 +89,9 @@ BasePage {
                             }
                         }
                     }
+					
+                    var offsetAdjustedTime = new Date();
+                    offsetAdjustedTime.setMinutes(offsetAdjustedTime.getMinutes() + timezone.offsetFromUTC);
 
                     //Add each timezone to the model
                     timezoneModel.append({
@@ -101,7 +104,8 @@ BasePage {
                                            timezoneOffsetFromUTC: timezone.offsetFromUTC,
                                            timezoneOffsetSign: timezone.offsetFromUTC.toString().substring(0,1) == "-" ? "-" : "+",
                                            timezoneOffsetHours: timezone.offsetFromUTC.toString().substring(0,1) == "-" ? Math.floor(timezone.offsetFromUTC.toString().substring(1)/60) + ":" +(timezone.offsetFromUTC.toString().substring(1)%60+"00").substring(0,2): Math.floor(timezone.offsetFromUTC.toString()/60) + ":" +(timezone.offsetFromUTC.toString()%60+"00").substring(0,2),
-                                           timezonePreferred: timezone.preferred ? timezone.preferred : false
+                                           timezonePreferred: timezone.preferred ? timezone.preferred : false,
+                                           timezoneoffsetAdjustedTime: " | "+Qt.formatDateTime(offsetAdjustedTime, "h:mm")
                                        })
 
 
@@ -213,13 +217,16 @@ BasePage {
     Column {
         id: column
         anchors.fill: content
-        spacing: Units.gu(1)
+        spacing: Units.gu(5)
 
         ListView {
             id: timezoneList
+            displayMarginBeginning: -6
+            displayMarginEnd: -6
             anchors.left: parent.left
             anchors.right: parent.right
             height: column.height - column.spacing
+            snapMode: ListView.SnapToItem	
 
             model: timezoneModel
 
@@ -227,51 +234,78 @@ BasePage {
                 id: delegate
                 anchors.right: parent.right
                 anchors.left: parent.left
-                height: tzCountry.height+tzCity.height > tzDescription.height+tzOffset.height ? tzCountry.height+tzCity.height + Units.gu(1) : tzDescription.height+tzOffset.height + Units.gu(1)//timezoneCity ? Units.gu(5) : Units.gu(4)
+                height: tzCountry.height+tzCity.height > tzDescription.height+tzOffset.height ? tzCountry.height+tzDescription.height > tzCountry.height+tzCity.height ? tzCountry.height+tzDescription.height + Units.gu(3.0) : tzCountry.height+tzCity.height + Units.gu(3) : tzDescription.height+tzOffset.height + Units.gu(3)
                 Label {
                     id: tzCountry
                     width: parent.width / 2
                     anchors.top: parent.top
+                    anchors.topMargin: Units.gu(1.5)
                     anchors.left: parent.left
-                    color: "white"
-                    font.pixelSize: FontUtils.sizeToPixels("small")
+                    color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
+                    font.pointSize: 36
                     text: timezoneCountry
-                    font.bold: delegate.ListView.isCurrentItem
-                    wrapMode: Text.Wrap
+                    font.bold: true
+                    wrapMode: Text.WordWrap
                 }
                 Label {
                     id: tzCity
                     width: parent.width / 2
                     anchors.top: tzCountry.bottom
-                    color: "white"
-                    font.pixelSize: FontUtils.sizeToPixels("x-small")
+                    color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
+                    font.pointSize: 22
                     text: timezoneCity
-                    font.bold: delegate.ListView.isCurrentItem
-                    wrapMode: Text.Wrap
+                    font.bold: true
+                    wrapMode: Text.WordWrap
+                }
+                Label {
+                    id: tzOffset
+                    width: content.width
+                    anchors.verticalCenter: tzTime.verticalCenter
+                    anchors.rightMargin: Units.gu(0.3)
+                    anchors.right: tzTime.left
+                    color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
+                    font.pointSize: 22
+                    text: "GMT "+timezoneOffsetSign + timezoneOffsetHours
+                    font.bold: true
+                    horizontalAlignment: Text.AlignRight
+                    wrapMode: Text.NoWrap
+                }
+                Label {
+                    id: tzTime
+                    anchors.top: tzCountry.top
+                    anchors.right: parent.right
+                    color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
+                    font.pointSize: 36
+                    text: timezoneoffsetAdjustedTime
+                    font.bold: true
+                    horizontalAlignment: Text.AlignRight
+                    wrapMode: Text.WordWrap
                 }
                 Label {
                     id: tzDescription
                     width: parent.width / 2
-                    anchors.top: parent.top
+                    anchors.top: tzCity.top
                     anchors.right: parent.right
-                    color: "white"
-                    font.pixelSize: FontUtils.sizeToPixels("small")
-                    text: timezoneDescription
-                    font.bold: delegate.ListView.isCurrentItem
+                    color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3" 
+                    font.pointSize: 22
+                    text: timezoneDescription 
+                    font.bold: true
                     horizontalAlignment: Text.AlignRight
-                    wrapMode: Text.Wrap
+                    wrapMode: Text.WordWrap
                 }
-                Label {
-                    id: tzOffset
-                    width: parent.width / 2
-                    anchors.right: parent.right
-                    anchors.top: tzDescription.bottom
-                    color: "white"
-                    font.pixelSize: FontUtils.sizeToPixels("x-small")
-                    text: "GMT "+timezoneOffsetSign + timezoneOffsetHours
-                    font.bold: delegate.ListView.isCurrentItem
-                    horizontalAlignment: Text.AlignRight
-                    wrapMode: Text.Wrap
+                Rectangle {
+                    id: dividerRectangleTop
+                    color: "#1e3355"
+                    width: parent.width
+                    height: Units.gu(1 / 10)
+                    anchors.top: parent.top
+                }
+                Rectangle {
+                    id: dividerRectangleBottom
+                    color: "#1e3355"
+                    width: parent.width
+                    height: Units.gu(1 / 10)
+                    anchors.top: parent.bottom
                 }
 
                 onClicked: {
