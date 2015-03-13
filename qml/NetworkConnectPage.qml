@@ -17,6 +17,7 @@
 
 import QtQuick 2.0
 import QtQuick.Controls 1.0
+import QtQuick.Controls.Styles 1.0
 import LuneOS.Service 1.0
 import LunaNext.Common 0.1
 import firstuse 1.0
@@ -71,7 +72,7 @@ BasePage {
                 anchors.right: parent.right
 
                 font.pixelSize: FontUtils.sizeToPixels("medium")
-                echoMode: TextInput.Password
+                echoMode: showPassphrase.checked ? TextInput.Normal : TextInput.Password
                 placeholderText: "Enter passphrase ..."
                 passwordCharacter: "\u2022"
 
@@ -89,6 +90,20 @@ BasePage {
                 color: "red"
                 text: "Please enter a passphrase!"
                 font.pixelSize: FontUtils.sizeToPixels("medium")
+            }
+
+            CheckBox {
+                id: showPassphrase
+                checked: false
+                text: "Show passphrase"
+                style: CheckBoxStyle {
+                    spacing: Units.gu(0.5)
+                    label: Text {
+                        color: "white"
+                        font.pixelSize: FontUtils.sizeToPixels("medium")
+                        text: control.text
+                    }
+                }
             }
         }
     }
