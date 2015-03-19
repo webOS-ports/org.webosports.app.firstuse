@@ -265,7 +265,7 @@ BasePage {
                     anchors.right: tzTime.left
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
                     font.pointSize: 22
-                    text: "GMT "+timezoneOffsetSign + timezoneOffsetHours
+                    text: "UTC "+ timezoneOffsetHours==="00:00" ? "" : timezoneOffsetSign + timezoneOffsetHours
                     font.bold: true
                     horizontalAlignment: Text.AlignRight
                     wrapMode: Text.NoWrap
