@@ -218,11 +218,10 @@ BasePage {
         id: column
         anchors.fill: content
         spacing: Units.gu(5)
+        clip: true
 
         ListView {
             id: timezoneList
-            displayMarginBeginning: -6
-            displayMarginEnd: -6
             anchors.left: parent.left
             anchors.right: parent.right
             height: column.height - column.spacing
@@ -242,7 +241,7 @@ BasePage {
                     anchors.topMargin: Units.gu(1.5)
                     anchors.left: parent.left
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
-                    font.pointSize: 36
+                    font.pixelSize: Units.gu(36/13.5) // 1/13.5 = 1/72*96/18
                     text: timezoneCountry
                     font.bold: true
                     wrapMode: Text.WordWrap
@@ -252,7 +251,7 @@ BasePage {
                     width: parent.width / 2
                     anchors.top: tzCountry.bottom
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
-                    font.pointSize: 22
+                    font.pixelSize: Units.gu(22/13.5)
                     text: timezoneCity
                     font.bold: true
                     wrapMode: Text.WordWrap
@@ -264,7 +263,7 @@ BasePage {
                     anchors.rightMargin: Units.gu(0.3)
                     anchors.right: tzTime.left
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
-                    font.pointSize: 22
+                    font.pixelSize: Units.gu(22/13.5)
                     text: timezoneOffsetHours==="0:00" ? "UTC " : "UTC " + timezoneOffsetSign + timezoneOffsetHours
                     font.bold: true
                     horizontalAlignment: Text.AlignRight
@@ -275,7 +274,7 @@ BasePage {
                     anchors.top: tzCountry.top
                     anchors.right: parent.right
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
-                    font.pointSize: 36
+                    font.pixelSize: Units.gu(36/13.5)
                     text: timezoneoffsetAdjustedTime
                     font.bold: true
                     horizontalAlignment: Text.AlignRight
@@ -287,7 +286,7 @@ BasePage {
                     anchors.top: tzCity.top
                     anchors.right: parent.right
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3" 
-                    font.pointSize: 22
+                    font.pixelSize: Units.gu(22/13.5)
                     text: timezoneDescription 
                     font.bold: true
                     horizontalAlignment: Text.AlignRight

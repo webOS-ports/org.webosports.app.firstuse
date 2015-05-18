@@ -245,6 +245,7 @@ BasePage {
                     Image {
                         id: connectedImage
                         source: "images/checkmark.png"
+                        layer.mipmap: true
                         visible: (networkInfo.connectState !== undefined && networkInfo.connectState === "ipConfigured")
                     }
 
@@ -259,6 +260,7 @@ BasePage {
                     Image {
                         id: secureImage
                         source: "images/secure-icon.png"
+                        layer.mipmap: true
                         visible: networkInfo.availableSecurityTypes !== undefined &&
                                  networkInfo.availableSecurityTypes.length > 0 &&
                                  networkInfo.availableSecurityTypes[0] !== "none"
@@ -266,6 +268,7 @@ BasePage {
 
                     Image {
                         id: signalImage
+                        layer.mipmap: true
                         source: determineSignalImage()
                         function determineSignalImage() {
                             switch (networkInfo.signalBars) {

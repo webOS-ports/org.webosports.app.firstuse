@@ -50,6 +50,7 @@ Item {
         id: background
         source: needGlow ? "images/bg.png" : "images/bg-noglow.png"
         anchors.fill: parent
+        layer.mipmap: true
     }
 
     // We want larger than even fontSize: "x-large", so we use a Text instead

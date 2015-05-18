@@ -130,6 +130,7 @@ BasePage {
         id: column
         anchors.fill: content
         spacing: Units.gu(1)
+        clip: true
 
         ListView {
             id: regionList

@@ -34,6 +34,7 @@ BasePage {
             source: "images/logostars.png"
             height: 400
             fillMode: Image.PreserveAspectFit
+            layer.mipmap: true
         }
 
         Text {
