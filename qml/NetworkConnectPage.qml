@@ -84,7 +84,7 @@ BasePage {
                 }
             }
 
-            Label {
+            Text {
                 id: passphraseHint
                 visible: false
                 color: "red"

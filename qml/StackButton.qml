@@ -36,7 +36,7 @@ BorderImage {
     border.top: 5
     border.bottom: 5
 
-    Label {
+    Text {
         id: label
         anchors.centerIn: parent
         color: "white"

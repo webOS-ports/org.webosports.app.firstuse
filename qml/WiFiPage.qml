@@ -144,7 +144,7 @@ BasePage {
         anchors.fill: content
         spacing: Units.gu(1)
 
-        Label {
+        Text {
             id: label
             anchors.left: parent.left
             anchors.right: parent.right
@@ -170,14 +170,14 @@ BasePage {
 
             model: networksModel
 
-            header: Label {
+            header: Text {
                     text: "Searching for networks ..."
                     font.pixelSize: FontUtils.sizeToPixels("medium")
                     color: "white"
                     visible: networksModel.count === 0
                 }
 
-            footer: Label {
+            footer: Text {
                 text: ""
                 font.pixelSize: FontUtils.sizeToPixels("medium")
                 color: "red"
@@ -248,7 +248,7 @@ BasePage {
                         visible: (networkInfo.connectState !== undefined && networkInfo.connectState === "ipConfigured")
                     }
 
-                    Label {
+                    Text {
                         id: networkStatus
                         text: connectStateToStr(networkInfo.connectState)
                         visible: isConnectingState(networkInfo.connectState)

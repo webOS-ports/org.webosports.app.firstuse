@@ -147,7 +147,7 @@ BasePage {
                 anchors.right: parent.right
                 anchors.left: parent.left
                 height: Units.gu(4)
-                Label {
+                Text {
                     id: name
                     anchors.fill: parent
                     color: "white"

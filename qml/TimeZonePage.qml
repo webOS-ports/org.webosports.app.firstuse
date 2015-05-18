@@ -235,7 +235,7 @@ BasePage {
                 anchors.right: parent.right
                 anchors.left: parent.left
                 height: tzCountry.height+tzCity.height > tzDescription.height+tzOffset.height ? tzCountry.height+tzDescription.height > tzCountry.height+tzCity.height ? tzCountry.height+tzDescription.height + Units.gu(3.0) : tzCountry.height+tzCity.height + Units.gu(3) : tzDescription.height+tzOffset.height + Units.gu(3)
-                Label {
+                Text {
                     id: tzCountry
                     width: parent.width / 2
                     anchors.top: parent.top
@@ -247,7 +247,7 @@ BasePage {
                     font.bold: true
                     wrapMode: Text.WordWrap
                 }
-                Label {
+                Text {
                     id: tzCity
                     width: parent.width / 2
                     anchors.top: tzCountry.bottom
@@ -257,7 +257,7 @@ BasePage {
                     font.bold: true
                     wrapMode: Text.WordWrap
                 }
-                Label {
+                Text {
                     id: tzOffset
                     width: content.width
                     anchors.verticalCenter: tzTime.verticalCenter
@@ -270,7 +270,7 @@ BasePage {
                     horizontalAlignment: Text.AlignRight
                     wrapMode: Text.NoWrap
                 }
-                Label {
+                Text {
                     id: tzTime
                     anchors.top: tzCountry.top
                     anchors.right: parent.right
@@ -281,7 +281,7 @@ BasePage {
                     horizontalAlignment: Text.AlignRight
                     wrapMode: Text.WordWrap
                 }
-                Label {
+                Text {
                     id: tzDescription
                     width: parent.width / 2
                     anchors.top: tzCity.top
