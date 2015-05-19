@@ -36,7 +36,9 @@ BorderImage {
     border.top: 5
     border.bottom: 5
 
-    Label {
+    layer.mipmap: true
+
+    Text {
         id: label
         anchors.centerIn: parent
         color: "white"

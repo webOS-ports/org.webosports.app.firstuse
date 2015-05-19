@@ -130,6 +130,7 @@ BasePage {
         id: column
         anchors.fill: content
         spacing: Units.gu(1)
+        clip: true
 
         ListView {
             id: regionList
@@ -144,7 +145,7 @@ BasePage {
                 anchors.right: parent.right
                 anchors.left: parent.left
                 height: Units.gu(4)
-                Label {
+                Text {
                     id: name
                     anchors.fill: parent
                     color: "white"

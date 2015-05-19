@@ -34,9 +34,10 @@ BasePage {
             source: "images/logostars.png"
             height: 400
             fillMode: Image.PreserveAspectFit
+            layer.mipmap: true
         }
 
-        Label {
+        Text {
             id: label1
             anchors.left: parent.left
             anchors.right: parent.right
@@ -46,7 +47,7 @@ BasePage {
             font.pixelSize: FontUtils.sizeToPixels("medium")
         }
 
-        Label {
+        Text {
             id: label2
             anchors.left: parent.left
             anchors.right: parent.right

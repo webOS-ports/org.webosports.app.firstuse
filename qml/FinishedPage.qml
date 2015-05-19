@@ -30,7 +30,7 @@ BasePage {
         anchors.fill: content
         spacing: Units.gu(1)
 
-        Label {
+        Text {
             anchors.left: parent.left
             anchors.right: parent.right
             wrapMode: Text.Wrap
@@ -39,7 +39,7 @@ BasePage {
             font.pixelSize: FontUtils.sizeToPixels("medium")
         }
 
-        Label {
+        Text {
             anchors.left: parent.left
             anchors.right: parent.right
             wrapMode: Text.Wrap
@@ -54,7 +54,7 @@ BasePage {
             height: Units.gu(5)
         }
 
-        Label {
+        Text {
             anchors.left: parent.left
             anchors.right: parent.right
             wrapMode: Text.Wrap

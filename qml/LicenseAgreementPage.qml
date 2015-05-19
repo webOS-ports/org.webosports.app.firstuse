@@ -50,7 +50,7 @@ BasePage {
         anchors.fill: content
         spacing: Units.gu(1)
 
-        Label {
+        Text {
             id: label1
             anchors.left: parent.left
             anchors.right: parent.right
@@ -72,7 +72,7 @@ BasePage {
             flickableDirection: Flickable.VerticalFlick
             boundsBehavior: Flickable.StopAtBounds
 
-            Label {
+            Text {
                 id: termsLabel
                 width: column.width
                 wrapMode: Text.WordWrap

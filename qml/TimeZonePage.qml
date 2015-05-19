@@ -218,11 +218,10 @@ BasePage {
         id: column
         anchors.fill: content
         spacing: Units.gu(5)
+        clip: true
 
         ListView {
             id: timezoneList
-            displayMarginBeginning: -6
-            displayMarginEnd: -6
             anchors.left: parent.left
             anchors.right: parent.right
             height: column.height - column.spacing
@@ -235,59 +234,59 @@ BasePage {
                 anchors.right: parent.right
                 anchors.left: parent.left
                 height: tzCountry.height+tzCity.height > tzDescription.height+tzOffset.height ? tzCountry.height+tzDescription.height > tzCountry.height+tzCity.height ? tzCountry.height+tzDescription.height + Units.gu(3.0) : tzCountry.height+tzCity.height + Units.gu(3) : tzDescription.height+tzOffset.height + Units.gu(3)
-                Label {
+                Text {
                     id: tzCountry
                     width: parent.width / 2
                     anchors.top: parent.top
                     anchors.topMargin: Units.gu(1.5)
                     anchors.left: parent.left
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
-                    font.pointSize: 36
+                    font.pixelSize: Units.gu(36/13.5) // 1/13.5 = 1/72*96/18
                     text: timezoneCountry
                     font.bold: true
                     wrapMode: Text.WordWrap
                 }
-                Label {
+                Text {
                     id: tzCity
                     width: parent.width / 2
                     anchors.top: tzCountry.bottom
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
-                    font.pointSize: 22
+                    font.pixelSize: Units.gu(22/13.5)
                     text: timezoneCity
                     font.bold: true
                     wrapMode: Text.WordWrap
                 }
-                Label {
+                Text {
                     id: tzOffset
                     width: content.width
                     anchors.verticalCenter: tzTime.verticalCenter
                     anchors.rightMargin: Units.gu(0.3)
                     anchors.right: tzTime.left
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
-                    font.pointSize: 22
+                    font.pixelSize: Units.gu(22/13.5)
                     text: timezoneOffsetHours==="0:00" ? "UTC " : "UTC " + timezoneOffsetSign + timezoneOffsetHours
                     font.bold: true
                     horizontalAlignment: Text.AlignRight
                     wrapMode: Text.NoWrap
                 }
-                Label {
+                Text {
                     id: tzTime
                     anchors.top: tzCountry.top
                     anchors.right: parent.right
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
-                    font.pointSize: 36
+                    font.pixelSize: Units.gu(36/13.5)
                     text: timezoneoffsetAdjustedTime
                     font.bold: true
                     horizontalAlignment: Text.AlignRight
                     wrapMode: Text.WordWrap
                 }
-                Label {
+                Text {
                     id: tzDescription
                     width: parent.width / 2
                     anchors.top: tzCity.top
                     anchors.right: parent.right
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3" 
-                    font.pointSize: 22
+                    font.pixelSize: Units.gu(22/13.5)
                     text: timezoneDescription 
                     font.bold: true
                     horizontalAlignment: Text.AlignRight
