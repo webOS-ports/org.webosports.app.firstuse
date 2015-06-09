@@ -97,7 +97,7 @@ Item {
         }
         z: 1
         text: "Back"
-        visible: pageStack.depth > 1 && hasBackButton
+        visible: pageStack.depth > 1 && hasBackButton && (parent.Stack.status === Stack.Activating || parent.Stack.status === Stack.Active)
         backArrow: true
 
         onClicked: customBack ? backClicked() : pageStack.back()
