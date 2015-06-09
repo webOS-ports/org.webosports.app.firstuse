@@ -162,6 +162,8 @@ BasePage {
                 timezoneList.currentIndex = currentTimezoneIndexPreferredOffset
                 timezoneList.positionViewAtIndex(currentTimezoneIndexPreferredOffset, ListView.Center)
             }
+
+            filteredTimezoneModel.syncWithFilter();
         }
     }
 
@@ -211,29 +213,59 @@ BasePage {
 
     ListModel {
         id: timezoneModel
-        dynamicRoles: true
+    }
+
+    ListModel {
+        id: filteredTimezoneModel
+
+        property string filter: filterTextField.text
+        onFilterChanged: syncWithFilter();
+
+        function syncWithFilter() {
+            filteredTimezoneModel.clear()
+            for( var i = 0; i < timezoneModel.count; ++i ) {
+                var timezoneItem = timezoneModel.get(i);
+                var filterLowered = filter.toLowerCase();
+                if( filterLowered.length === 0 ||
+                    timezoneItem.timezoneCountry.toLowerCase().indexOf(filterLowered) >= 0 ||
+                    timezoneItem.timezoneCity.toLowerCase().indexOf(filterLowered) >= 0 )
+                {
+                    filteredTimezoneModel.append(timezoneItem);
+                }
+            }
+        }
     }
 
     Column {
         id: column
         anchors.fill: content
         spacing: Units.gu(5)
-        clip: true
+
+        TextField {
+            id: filterTextField
+            placeholderText: "Filter list..."
+        }
 
         ListView {
             id: timezoneList
             anchors.left: parent.left
             anchors.right: parent.right
-            height: column.height - column.spacing
+            height: column.height - column.spacing - filterTextField.height
             snapMode: ListView.SnapToItem	
 
-            model: timezoneModel
+            clip: true
+
+            model: filteredTimezoneModel
 
             delegate: MouseArea {
                 id: delegate
+
                 anchors.right: parent.right
                 anchors.left: parent.left
-                height: tzCountry.height+tzCity.height > tzDescription.height+tzOffset.height ? tzCountry.height+tzDescription.height > tzCountry.height+tzCity.height ? tzCountry.height+tzDescription.height + Units.gu(3.0) : tzCountry.height+tzCity.height + Units.gu(3) : tzDescription.height+tzOffset.height + Units.gu(3)
+                height: Math.max(tzCountry.height+tzCity.height,
+                                 tzDescription.height+tzOffset.height,
+                                 tzCountry.height+tzDescription.height) + Units.gu(3.0)
+
                 Text {
                     id: tzCountry
                     width: parent.width / 2
@@ -285,9 +317,9 @@ BasePage {
                     width: parent.width / 2
                     anchors.top: tzCity.top
                     anchors.right: parent.right
-                    color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3" 
+                    color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
                     font.pixelSize: Units.gu(22/13.5)
-                    text: timezoneDescription 
+                    text: timezoneDescription
                     font.bold: true
                     horizontalAlignment: Text.AlignRight
                     wrapMode: Text.WordWrap
