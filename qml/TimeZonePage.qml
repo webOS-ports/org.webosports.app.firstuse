@@ -244,6 +244,7 @@ BasePage {
         TextField {
             id: filterTextField
             placeholderText: "Filter list..."
+            height: Units.gu(4)
         }
 
         ListView {
