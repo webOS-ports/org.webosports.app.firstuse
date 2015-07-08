@@ -55,7 +55,7 @@ BasePage {
 
         onResponse: function (message) {
             var response = JSON.parse(message.payload)
-            regionModel.clear()
+            countryModel.clear()
             if (response.region && response.region.length > 0) {
                 for (var n = 0; n < response.region.length; n++) {
                     var region = response.region[n]
@@ -64,7 +64,7 @@ BasePage {
                     if (GlobalState.mccCountryCode !== null
                             && GlobalState.mccCountryCode === region.countryCode) {
                         currentRegionIndex = n
-                        //We need to make sure we store the preferencs here right away, otherwise they might not get stored due to the fact we don't need to select anything
+                        //We need to make sure we store the preferences here right away, otherwise they might not get stored due to the fact we don't need to select anything
                         applySelectedRegion(region.countryCode,
                                             region.countryName)
                     } else if (currentRegion !== null
@@ -73,15 +73,15 @@ BasePage {
                         currentRegionIndex = n
                     }
 
-                    regionModel.append({
+                    countryModel.append({
                                            countryName: region.countryName,
                                            countryCode: region.countryCode
                                        })
                 }
-            }
-
-            regionList.currentIndex = currentRegionIndex
-            regionList.positionViewAtIndex(currentRegionIndex, ListView.Center)
+			}
+			countryList.currentIndex = currentRegionIndex
+			countryList.positionViewAtIndex(currentRegionIndex, ListView.Center)
+			filteredCountryModel.syncWithFilter();
         }
     }
 
@@ -103,7 +103,6 @@ BasePage {
     }
 
     function getPreferencesFailure(message) {
-        console.log("Unable to get preferences")
         //No region found, default to US
         currentRegion = '{"countryName":"United States","countryCode":"us"}'
         //We want to see if we can get the country based on the MCC of our sim card
@@ -122,23 +121,53 @@ BasePage {
     }
 
     ListModel {
-        id: regionModel
-        dynamicRoles: true
+        id: countryModel
     }
 
+    ListModel {
+        id: filteredCountryModel
+
+        property string filter: filterTextField.text
+        onFilterChanged: syncWithFilter();
+
+        function syncWithFilter() {
+            filteredCountryModel.clear()
+            for( var i = 0; i < countryModel.count; ++i ) {
+                var countryItem = countryModel.get(i);
+				var filterLowered = filter.toLowerCase();
+                if( filterLowered.length === 0 ||
+                    countryItem.countryName.toLowerCase().indexOf(filterLowered) >= 0 ||
+                    countryItem.countryCode.toLowerCase().indexOf(filterLowered) >= 0 )
+                {
+                    filteredCountryModel.append(countryItem);
+                }
+            }
+            countryList.currentIndex = currentRegionIndex
+            countryList.positionViewAtIndex(currentRegionIndex, ListView.Center)
+        }
+    }
+	
     Column {
         id: column
         anchors.fill: content
         spacing: Units.gu(1)
-        clip: true
+
+        TextField {
+            id: filterTextField
+            placeholderText: "Filter list..."
+            height: Units.gu(4)
+            font.pixelSize: Units.gu(36/13.5)
+        }
 
         ListView {
-            id: regionList
+            id: countryList
             anchors.left: parent.left
             anchors.right: parent.right
-            height: column.height - column.spacing
+            height: column.height - column.spacing - filterTextField.height
 
-            model: regionModel
+			clip: true
+			
+            model: filteredCountryModel
 
             delegate: MouseArea {
                 id: delegate
@@ -154,7 +183,7 @@ BasePage {
                     font.bold: delegate.ListView.isCurrentItem
                 }
                 onClicked: {
-                    regionList.currentIndex = index
+                    countryList.currentIndex = index
                     applySelectedRegion(countryCode, countryName)
                 }
             }
