@@ -36,6 +36,7 @@ BasePage {
     property int currentTimezoneIndexPreferredTemp: -1
     property int currentTimezoneIndexPreferred: -1
     property int currentTimezoneIndexPreferredOffset: -1
+    property int finalIndex: -1
 
     LunaService {
         id: service
@@ -69,11 +70,13 @@ BasePage {
 
         function fetchAvailableTimezonesSuccess (message) {
                     var response = JSON.parse(message.payload)
+
                     timezoneModel.clear()
                     if (response.timeZone && response.timeZone.length > 0) {
                         for (var n = 0; n < response.timeZone.length; n++) {
                             var timezone = response.timeZone[n]
                             if (currentRegion === timezone.CountryCode) {
+                                console.log("Herrie currentRegion: "+currentRegion+ "timezone.CountryCode: "+timezone.CountryCode+" MATCHING currentTimezoneIndex: "+n);
                                 currentTimezoneIndex = n
                                 //For countries with multiple timezones, we need to have the preferred one
                                 if(timezone.preferred) {
@@ -143,33 +146,23 @@ BasePage {
 
                     //Make sure we select the right one in the list
 
-                    //If we don't have a closest match
-                    if(currentTimezoneIndexPreferredOffset == -1) {
-                        //And also none nearest to current mcc
-                        if(currentTimezoneIndexPreferredTemp == -1) {
-                            //And also no preferred one, so defaulting to the available one (usually for countries with a single timezone only)
-                            if(currentTimezoneIndexPreferred == -1) {
-                                timezoneList.currentIndex = currentTimezoneIndex
-                                timezoneList.positionViewAtIndex(currentTimezoneIndex, ListView.Center)
-                            }
-                            //Use the preferred one
-                            else {
-                                timezoneList.currentIndex = currentTimezoneIndexPreferred
-                                timezoneList.positionViewAtIndex(currentTimezoneIndexPreferred, ListView.Center)
-                            }
-                        }
-                        //Use the one nearest to the current mcc
-                        else {
-                            timezoneList.currentIndex = currentTimezoneIndexPreferredTemp
-                            timezoneList.positionViewAtIndex(currentTimezoneIndexPreferredTemp, ListView.Center)
-                        }
-                    }
-                    //We prefer the closest match
-                    else {
-                        timezoneList.currentIndex = currentTimezoneIndexPreferredOffset
-                        timezoneList.positionViewAtIndex(currentTimezoneIndexPreferredOffset, ListView.Center)
-                    }
-
+                    //Take the preferred one with smallest offset, regular prefered one or other available one
+                    if(currentTimezoneIndexPreferredOffset !== -1)
+					{
+						finalIndex = currentTimezoneIndexPreferredOffset;
+					}
+					else if (currentTimezoneIndexPreferred !== -1)
+					{
+						finalIndex = currentTimezoneIndexPreferred
+					}
+					else
+					{
+                        finalIndex = Math.max(currentTimezoneIndexPreferredTemp, currentTimezoneIndex);
+					}
+					
+					timezoneList.currentIndex = finalIndex
+                    timezoneList.positionViewAtIndex(finalIndex, ListView.Center)
+                    
                     filteredTimezoneModel.syncWithFilter();
                 }
         function fetchAvailableTimezonesFailure (message) {
@@ -227,6 +220,10 @@ BasePage {
                     filteredTimezoneModel.append(timezoneItem);
                 }
             }
+			console.log("sync + finalIndex: "+finalIndex);
+			timezoneList.currentIndex = finalIndex
+            timezoneList.positionViewAtIndex(finalIndex, ListView.Center)
+
         }
     }
 

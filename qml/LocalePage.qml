@@ -81,7 +81,7 @@ BasePage {
                     service.call("luna://com.palm.systemservice/getPreferenceValues", JSON.stringify({key: "locale"}), fetchLocalesSuccess, fetchLocalesFailure);
 
                     function fetchLocalesSuccess (message) {
-                        console.log("Herrie fetchLocalelSuccess");
+                        console.log("Herrie fetchLocaleSuccess");
                                 var response = JSON.parse(message.payload);
                                 localeModel.clear();
 
@@ -131,7 +131,6 @@ BasePage {
 
     ListModel {
         id: localeModel
-        //dynamicRoles: true
     }
 
     ListModel {
