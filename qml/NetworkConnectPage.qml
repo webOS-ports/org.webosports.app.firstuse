@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +18,7 @@
 
 import QtQuick 2.0
 import QtQuick.Controls 1.0
-import QtQuick.Controls.Styles 1.0
+import QtQuick.Controls.Styles 1.3
 import LuneOS.Service 1.0
 import LunaNext.Common 0.1
 import firstuse 1.0
@@ -33,15 +34,9 @@ BasePage {
     forwardButtonSourceComponent: forwardButton
 
     LunaService {
-        id: connectNetwork
+        id: service
         name: "org.webosports.app.firstuse"
         usePrivateBus: true
-        service: "luna://com.palm.wifi"
-        method: "connect"
-
-        onResponse: function (message) {
-            console.log("response: " + message.payload);
-        }
     }
 
     Item {
@@ -74,7 +69,8 @@ BasePage {
                 font.pixelSize: FontUtils.sizeToPixels("medium")
                 echoMode: showPassphrase.checked ? TextInput.Normal : TextInput.Password
                 placeholderText: "Enter passphrase ..."
-                passwordCharacter: "\u2022"
+                //Only becomes available in QT 5.5 with QtQuick.Controls.Styles 1.4
+                //passwordCharacter: "\u2022"
 
                 onActiveFocusChanged: {
                     if (passphrase.focus)
@@ -116,14 +112,22 @@ BasePage {
 
         passphraseHint.visible = false;
 
-        connectNetwork.call(JSON.stringify({
+        service.call("luna://com.palm.wifi/connect",JSON.stringify({
             ssid: page.ssid,
             security: {
                 simpleSecurity: {
                     passKey: passphrase.text
                }
             }
-        }));
+        }), networkConnectSuccess, networkConnectFailure)
+
+        function networkConnectSuccess(message) {
+                    console.log("networkConnectSuccess response: " + message.payload);
+        }
+        function networkConnectFailure(message) {
+                    console.log("networkConnectFailure response: " + message.payload);
+        }
+        ;
 
         pageStack.pop();
     }

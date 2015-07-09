@@ -36,62 +36,9 @@ BasePage {
     }
 	
     LunaService {
-        id: getPreference
+        id: service
         name: "org.webosports.app.firstuse"
         usePrivateBus: true
-        service: "luna://com.palm.systemservice"
-        method: "getPreferences"
-    }
-
-    LunaService {
-        id: fetchAvailableLocales
-        name: "org.webosports.app.firstuse"
-        usePrivateBus: true
-        service: "luna://com.palm.systemservice"
-        method: "getPreferenceValues"
-
-        onResponse: function (message) {
-            var response = JSON.parse(message.payload);
-            localeModel.clear();
-
-            if (response.locale && response.locale.length > 0) {
-                var currentIndex = 0;
-                for (var n = 0; n < response.locale.length; n++) {
-                    var locale = response.locale[n];
-
-                    for (var m = 0; m < locale.countries.length; m++) {
-                        var country = locale.countries[m];
-
-                        if (locale.languageCode === currentLocale.languageCode &&
-                            country.countryCode === currentLocale.countryCode)
-                        {
-                            console.log("Current locale is " + locale.languageName + " (" + country.countryName + ")");
-                            currentLocaleIndex = currentIndex;
-                        }
-
-                        localeModel.append({
-                            languageName: locale.languageName,
-                            languageCode: locale.languageCode,
-                            countryName: country.countryName,
-                            countryCode: country.countryCode
-                        });
-
-                        currentIndex++;
-                    }
-                }
-            }
-
-            localeList.currentIndex = currentLocaleIndex;
-            localeList.positionViewAtIndex(currentLocaleIndex, ListView.Center);
-        }
-    }
-
-    LunaService {
-        id: setPreferences
-        name: "org.webosports.app.firstuse"
-        usePrivateBus: true
-        service: "luna://com.palm.systemservice"
-        method: "setPreferences"
     }
 
     function applySelectedLocale(languageCode, countryCode, countryName) {
@@ -106,42 +53,129 @@ BasePage {
             }
         };
 
-        setPreferences.call(JSON.stringify(request));
+        service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setPreferencesSuccess, setPreferencesFailure);
+
+        function setPreferencesSuccess (message) {
+            console.log("Herrie setPrefsSuccess")
+                }
+
+        function setPreferencesFailure (message) {
+            console.log("Herrie setPrefsFailure")
+                }
     }
 
     Component.onCompleted: {
         networkIdCountryMapper.loadData()
-        getPreference.call(JSON.stringify({keys: ["locale"]}), function (message) {
-            var response = JSON.parse(message.payload);
+        service.call("luna://com.palm.systemservice/getPreferences", JSON.stringify({keys: ["locale"]}), getPrefsSuccess, getPrefsFailure);
 
-            if (response.locale !== undefined) {
-                currentLocale = response.locale;
-                console.log("Current locale " + JSON.stringify(currentLocale));
-            }
+        function getPrefsSuccess(message) {
+            console.log("Herrie getPrefsSuccess");
+                    var response = JSON.parse(message.payload);
 
-            // now we can fetch all possible values and setup our model
-            fetchAvailableLocales.call(JSON.stringify({key: "locale"}));
-        }, function (message) { });
+                    if (response.locale !== undefined) {
+                        currentLocale = response.locale;
+                        console.log("Current locale " + JSON.stringify(currentLocale));
+                    }
+
+                    // now we can fetch all possible values and setup our model
+                    service.call("luna://com.palm.systemservice/getPreferenceValues", JSON.stringify({key: "locale"}), fetchLocalesSuccess, fetchLocalesFailure);
+
+                    function fetchLocalesSuccess (message) {
+                        console.log("Herrie fetchLocaleSuccess");
+                                var response = JSON.parse(message.payload);
+                                localeModel.clear();
+
+                                if (response.locale && response.locale.length > 0) {
+                                    var currentIndex = 0;
+                                    for (var n = 0; n < response.locale.length; n++) {
+                                        var locale = response.locale[n];
+
+                                        for (var m = 0; m < locale.countries.length; m++) {
+                                            var country = locale.countries[m];
+
+                                            if (locale.languageCode === currentLocale.languageCode &&
+                                                country.countryCode === currentLocale.countryCode)
+                                            {
+                                                console.log("Current locale is " + locale.languageName + " (" + country.countryName + ")");
+                                                currentLocaleIndex = currentIndex;
+                                            }
+
+                                            localeModel.append({
+                                                languageName: locale.languageName,
+                                                languageCode: locale.languageCode,
+                                                countryName: country.countryName,
+                                                countryCode: country.countryCode
+                                            });
+
+                                            currentIndex++;
+                                        }
+                                    }
+                                }
+
+                                localeList.currentIndex = currentLocaleIndex;
+                                localeList.positionViewAtIndex(currentLocaleIndex, ListView.Center);
+                                filteredLocaleModel.syncWithFilter();
+                            }
+
+                    function fetchLocalesFailure (message) {
+                        console.log("Herrie unable to fetch locales")
+                            }
+
+                }
+
+        function getPrefsFailure(message)
+        {
+            console.log("Herrie Unable to fetch prefs")
+        }
     }
 
     ListModel {
         id: localeModel
-        dynamicRoles: true
     }
+
+    ListModel {
+        id: filteredLocaleModel
+        property string filter: filterTextField.text
+        onFilterChanged: syncWithFilter();
+
+            function syncWithFilter() {
+                filteredLocaleModel.clear()
+                for( var i = 0; i < localeModel.count; ++i ) {
+                    var localeItem = localeModel.get(i);
+                    var filterLowered = filter.toLowerCase();
+                    if( filterLowered.length === 0 ||
+                        localeItem.languageName.toLowerCase().indexOf(filterLowered) >= 0 )
+                    {
+                        filteredLocaleModel.append(localeItem);
+                    }
+                }
+                localeList.currentIndex = currentLocaleIndex
+                localeList.positionViewAtIndex(currentLocaleIndex, ListView.Center)
+            }
+        }
 
     Column {
         id: column
         anchors.fill: content
         spacing: Units.gu(1)
-        clip: true
+        //clip: true
 
+        TextField {
+            id: filterTextField
+            placeholderText: "Filter list..."
+            height: Units.gu(4)
+            font.pixelSize: Units.gu(36/13.5)
+        }
+
+		
         ListView {
             id: localeList
             anchors.left: parent.left
             anchors.right: parent.right
-            height: column.height - column.spacing
+            height: column.height - column.spacing - filterTextField.height
+			clip: true
 
-            model: localeModel
+            model: filteredLocaleModel
 
             delegate: MouseArea {
                 id: delegate

@@ -31,62 +31,13 @@ BasePage {
     property int currentRegionIndex: -1
 
     LunaService {
-        id: getPreference
+        id: service
         name: "org.webosports.app.firstuse"
         usePrivateBus: true
-        service: "luna://com.palm.systemservice"
-        method: "getPreferences"
-    }
-
-    LunaService {
-        id: setPreferences
-        name: "org.webosports.app.firstuse"
-        usePrivateBus: true
-        service: "luna://com.palm.systemservice"
-        method: "setPreferences"
-    }
-
-    LunaService {
-        id: fetchAvailableRegions
-        name: "org.webosports.app.firstuse"
-        usePrivateBus: true
-        service: "luna://com.palm.systemservice"
-        method: "getPreferenceValues"
-
-        onResponse: function (message) {
-            var response = JSON.parse(message.payload)
-            regionModel.clear()
-            if (response.region && response.region.length > 0) {
-                for (var n = 0; n < response.region.length; n++) {
-                    var region = response.region[n]
-
-                    //First try to determine country based on MCC else based on preferences we got
-                    if (GlobalState.mccCountryCode !== null
-                            && GlobalState.mccCountryCode === region.countryCode) {
-                        currentRegionIndex = n
-                        //We need to make sure we store the preferencs here right away, otherwise they might not get stored due to the fact we don't need to select anything
-                        applySelectedRegion(region.countryCode,
-                                            region.countryName)
-                    } else if (currentRegion !== null
-                               && currentRegion.countryCode === region.countryCode
-                               && currentRegionIndex == -1) {
-                        currentRegionIndex = n
-                    }
-
-                    regionModel.append({
-                                           countryName: region.countryName,
-                                           countryCode: region.countryCode
-                                       })
-                }
-            }
-
-            regionList.currentIndex = currentRegionIndex
-            regionList.positionViewAtIndex(currentRegionIndex, ListView.Center)
-        }
     }
 
     Component.onCompleted: {
-        getPreference.call(JSON.stringify({
+        service.call("luna://com.palm.systemservice/getPreferences", JSON.stringify({
                                               keys: ["region"]
                                           }), getPreferencesSuccess,
                            getPreferencesFailure)
@@ -97,13 +48,49 @@ BasePage {
         if (response.region !== undefined) {
             currentRegion = response.region
         }
-		fetchAvailableRegions.call(JSON.stringify({
+        service.call("luna://com.palm.systemservice/getPreferenceValues",JSON.stringify({
                                                       key: "region"
-                                                  }))
+                                                  }), getPreferenceValuesSuccess, getPreferenceValuesFailure)
+    }
+
+    function getPreferenceValuesSuccess(message) {
+        console.log("Preference values success")
+        var response = JSON.parse(message.payload)
+        countryModel.clear()
+        if (response.region && response.region.length > 0) {
+            for (var n = 0; n < response.region.length; n++) {
+                var region = response.region[n]
+
+                //First try to determine country based on MCC else based on preferences we got
+                if (GlobalState.mccCountryCode !== null
+                        && GlobalState.mccCountryCode === region.countryCode) {
+                    currentRegionIndex = n
+                    //We need to make sure we store the preferences here right away, otherwise they might not get stored due to the fact we don't need to select anything
+                    applySelectedRegion(region.countryCode,
+                                        region.countryName)
+                } else if (currentRegion !== null
+                           && currentRegion.countryCode === region.countryCode
+                           && currentRegionIndex == -1) {
+                    currentRegionIndex = n
+                }
+
+                countryModel.append({
+                                       countryName: region.countryName,
+                                       countryCode: region.countryCode
+                                   })
+            }
+        }
+        countryList.currentIndex = currentRegionIndex
+        countryList.positionViewAtIndex(currentRegionIndex, ListView.Center)
+        filteredCountryModel.syncWithFilter();
+    }
+
+
+    function getPreferenceValuesFailure(message) {
+        console.log("Unable to get preference values")
     }
 
     function getPreferencesFailure(message) {
-        console.log("Unable to get preferences")
         //No region found, default to US
         currentRegion = '{"countryName":"United States","countryCode":"us"}'
         //We want to see if we can get the country based on the MCC of our sim card
@@ -118,27 +105,66 @@ BasePage {
             }
         }
 
-        setPreferences.call(JSON.stringify(request))
+        service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setPreferencesSuccess, setPreferencesFailure);
+
+        function setPreferencesSuccess (message) {
+            console.log("Herrie setPrefsSuccess")
+                }
+
+        function setPreferencesFailure (message) {
+            console.log("Herrie setPrefsFailure")
+                }
+
     }
 
     ListModel {
-        id: regionModel
-        dynamicRoles: true
+        id: countryModel
     }
 
+    ListModel {
+        id: filteredCountryModel
+
+        property string filter: filterTextField.text
+        onFilterChanged: syncWithFilter();
+
+        function syncWithFilter() {
+            filteredCountryModel.clear()
+            for( var i = 0; i < countryModel.count; ++i ) {
+                var countryItem = countryModel.get(i);
+				var filterLowered = filter.toLowerCase();
+                if( filterLowered.length === 0 ||
+                    countryItem.countryName.toLowerCase().indexOf(filterLowered) >= 0 ||
+                    countryItem.countryCode.toLowerCase().indexOf(filterLowered) >= 0 )
+                {
+                    filteredCountryModel.append(countryItem);
+                }
+            }
+            countryList.currentIndex = currentRegionIndex
+            countryList.positionViewAtIndex(currentRegionIndex, ListView.Center)
+        }
+    }
+	
     Column {
         id: column
         anchors.fill: content
         spacing: Units.gu(1)
-        clip: true
+
+        TextField {
+            id: filterTextField
+            placeholderText: "Filter list..."
+            height: Units.gu(4)
+            font.pixelSize: Units.gu(36/13.5)
+        }
 
         ListView {
-            id: regionList
+            id: countryList
             anchors.left: parent.left
             anchors.right: parent.right
-            height: column.height - column.spacing
+            height: column.height - column.spacing - filterTextField.height
 
-            model: regionModel
+			clip: true
+			
+            model: filteredCountryModel
 
             delegate: MouseArea {
                 id: delegate
@@ -154,7 +180,7 @@ BasePage {
                     font.bold: delegate.ListView.isCurrentItem
                 }
                 onClicked: {
-                    regionList.currentIndex = index
+                    countryList.currentIndex = index
                     applySelectedRegion(countryCode, countryName)
                 }
             }

@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
- * Copyright (C) 2014 Herman van Hazendonk <github.com@herrie.org>
+ * Copyright (C) 2014-2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -32,29 +32,9 @@ BasePage {
     property string stackButtonText: "Skip"
 
     LunaService {
-        id: setWanProp
+        id: service
         name: "org.webosports.app.firstuse"
         usePrivateBus: true
-        service: "luna://com.palm.wan"
-        method: "set"
-
-        onResponse: function(message){
-            var response = JSON.parse(message.payload);
-            if (!response.returnValue){
-                console.error("Failed to enable WAN connectivity");
-            }
-            else {
-                console.log("Successfully enabled WAN connectivity");
-            }
-        }
-    }
-
-    LunaService {
-        id: setState
-        name: "org.webosports.app.firstuse"
-        usePrivateBus: true
-        service: "luna://com.palm.wifi"
-        method: "setstate"
     }
 
     Timer {
@@ -64,50 +44,62 @@ BasePage {
         triggeredOnStart: true
         interval: 1000
         onTriggered: {
-            findNetworks.call("{}");
-        }
-    }
+            service.call("luna://com.palm.wifi/findnetworks","{}",findNetworksSuccess, findNetworksFailure);
 
-    LunaService {
-        id: findNetworks
-        name: "org.webosports.app.firstuse"
-        usePrivateBus: true
-        service: "luna://com.palm.wifi"
-        method: "findnetworks"
+            function findNetworksSuccess (message) {
+                         console.log("findNetworksSuccess response: " + message.payload);
+                        var response = JSON.parse(message.payload);
+                        networksModel.clear();
+                        if (response.foundNetworks && response.foundNetworks.length > 0) {
+                            for (var n = 0; n < response.foundNetworks.length; n++) {
+                                var network = response.foundNetworks[n];
+                                // console.log("Adding network " + network);
+                                networksModel.append(network);
+                                if (network.networkInfo.connectState !== undefined &&
+                                    network.networkInfo.connectState === "ipConfigured")
+                                    stackButtonText = "Next";
+                            }
+                        }
+                    }
 
-        onResponse: function (message) {
-            // console.log("response: " + message.payload);
-            var response = JSON.parse(message.payload);
-            networksModel.clear();
-            if (response.foundNetworks && response.foundNetworks.length > 0) {
-                for (var n = 0; n < response.foundNetworks.length; n++) {
-                    var network = response.foundNetworks[n];
-                    // console.log("Adding network " + network);
-                    networksModel.append(network);
-                    if (network.networkInfo.connectState !== undefined &&
-                        network.networkInfo.connectState === "ipConfigured")
-                        stackButtonText = "Next";
-                }
-            }
-        }
-    }
-
-    LunaService {
-        id: connectNetwork
-        name: "org.webosports.app.firstuse"
-        usePrivateBus: true
-        service: "luna://com.palm.wifi"
-        method: "connect"
-
-        onResponse: function (message) {
-            console.log("response: " + message.payload);
+            function findNetworksFailure (message) {
+                         console.log("findNetworksFailure response: " + message.payload);
+                    }
         }
     }
 
     Component.onCompleted: {
         // enable WiFi by default
-        setState.call(JSON.stringify({"state":"enabled"}));
-        setWanProp.call(JSON.stringify({"disablewan":"off"}));
+        service.call("luna://com.palm.wifi/setstate", JSON.stringify({"state":"enabled"}), setStateSuccess, setStateFailure);
+        service.call("luna://com.palm.wan/set", JSON.stringify({"disablewan":"off"}), setDisableWanSuccess, setDisableWanFailure)
+
+        function setStateSuccess(message)
+        {
+            console.log("setStateSuccess");
+        }
+
+        function setStateFailure(message)
+        {
+            console.log("setStateFailure");
+        }
+
+
+        function setDisableWanSuccess(message){
+                    var response = JSON.parse(message.payload);
+                    if (!response.returnValue){
+                        console.error("Failed to enable WAN connectivity");
+                    }
+                    else {
+                        console.log("Successfully enabled WAN connectivity");
+                    }
+        }
+
+        function setDisableWanFailure(message){
+                                    console.error("setDisableWanFailure");
+                                }
+
+
+        ;
     }
 
     function connectStateToStr(state) {
@@ -207,9 +199,20 @@ BasePage {
 
                     if (networkInfo.profileId !== undefined) {
                         console.log("Connecting with profile id " + networkInfo.profileId);
-                        connectNetwork.call(JSON.stringify({
+                        service.call("luna://com.palm.wifi/connect", JSON.stringify({
                             profileId: networkInfo.profileId
-                        }));
+                        }), connectNetworkSuccess, connectNetworkFailure )
+
+                        function connectNetworkSuccess (message)
+                        {
+                            console.log("connectNetworkSuccess response: " + message.payload);
+                        }
+
+                        function connectNetworkFailure (message)
+                        {
+                            console.log("connectNetworkFailure");
+                        }
+                       ;
                     }
                     else if (networkInfo.availableSecurityTypes.indexOf("psk") !== -1 ||
                              networkInfo.availableSecurityTypes.indexOf("wep") !== -1) {
