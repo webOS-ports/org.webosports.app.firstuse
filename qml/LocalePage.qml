@@ -53,13 +53,13 @@ BasePage {
             }
         };
 
-        service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setPrefsSuccess, setPrefsFailure);
+        service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setPreferencesSuccess, setPreferencesFailure);
 
-        function setPrefsSuccess (message) {
+        function setPreferencesSuccess (message) {
             console.log("Herrie setPrefsSuccess")
                 }
 
-        function setPrefsFailure (message) {
+        function setPreferencesFailure (message) {
             console.log("Herrie setPrefsFailure")
                 }
     }
