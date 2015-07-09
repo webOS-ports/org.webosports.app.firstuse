@@ -32,32 +32,10 @@ BasePage {
     property string stackButtonText: "Skip"
 
     LunaService {
-        //id: setWanProp
         id: service
         name: "org.webosports.app.firstuse"
         usePrivateBus: true
-/*        service: "luna://com.palm.wan"
-        method: "set"
-
-        onResponse: function(message){
-            var response = JSON.parse(message.payload);
-            if (!response.returnValue){
-                console.error("Failed to enable WAN connectivity");
-            }
-            else {
-                console.log("Successfully enabled WAN connectivity");
-            }
-        }
-        */
     }
-
-    /*LunaService {
-        id: setState
-        name: "org.webosports.app.firstuse"
-        usePrivateBus: true
-        service: "luna://com.palm.wifi"
-        method: "setstate"
-    }*/
 
     Timer {
         id: autoscanTimer
@@ -89,42 +67,6 @@ BasePage {
                     }
         }
     }
-
-    /*LunaService {
-        id: findNetworks
-        name: "org.webosports.app.firstuse"
-        usePrivateBus: true
-        service: "luna://com.palm.wifi"
-        method: "findnetworks"
-
-        onResponse: function (message) {
-            // console.log("response: " + message.payload);
-            var response = JSON.parse(message.payload);
-            networksModel.clear();
-            if (response.foundNetworks && response.foundNetworks.length > 0) {
-                for (var n = 0; n < response.foundNetworks.length; n++) {
-                    var network = response.foundNetworks[n];
-                    // console.log("Adding network " + network);
-                    networksModel.append(network);
-                    if (network.networkInfo.connectState !== undefined &&
-                        network.networkInfo.connectState === "ipConfigured")
-                        stackButtonText = "Next";
-                }
-            }
-        }
-    }*/
-
-    /*LunaService {
-        id: connectNetwork
-        name: "org.webosports.app.firstuse"
-        usePrivateBus: true
-        service: "luna://com.palm.wifi"
-        method: "connect"
-
-        onResponse: function (message) {
-            console.log("response: " + message.payload);
-        }
-    }*/
 
     Component.onCompleted: {
         // enable WiFi by default

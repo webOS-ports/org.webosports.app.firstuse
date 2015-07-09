@@ -46,7 +46,6 @@ QtObject {
     function call(serviceURI, jsonArgs, returnFct, handleError) {
         console.log("LunaService::call called with serviceURI=" + serviceURI + ", args=" + jsonArgs);
         var args = JSON.parse(jsonArgs);
-        console.log("herrie: "+args.keys)
         if( serviceURI === "luna://com.palm.applicationManager/listLaunchPoints" ) {
             listLaunchPoints_call(args, returnFct, handleError);
         }
@@ -64,6 +63,21 @@ QtObject {
         }
         else if (serviceURI === "luna://com.palm.systemservice/getPreferences") {
             getPreferences_call(args, returnFct, handleError);
+        }
+        else if (serviceURI === "luna://com.palm.systemservice/setPreferences") {
+            setPreferences_call(args, returnFct, handleError);
+        }
+        else if (serviceURI === "luna://com.palm.wifi/connect") {
+            wifiConnect_call(args, returnFct, handleError);
+        }
+        else if (serviceURI === "luna://com.palm.wifi/setstate") {
+            wifiSetState_call(args, returnFct, handleError);
+        }
+        else if (serviceURI === "luna://com.palm.wan/set") {
+            wanSet_call(args, returnFct, handleError);
+        }
+        else if (serviceURI === "luna://com.palm.wifi/findnetworks") {
+            findNetworks_call(args, returnFct, handleError);
         }
         else if (serviceURI === "luna://com.palm.systemservice/getPreferenceValues") {
             getPreferenceValues_call(args, returnFct, handleError);
@@ -270,6 +284,12 @@ QtObject {
         returnFct({payload: JSON.stringify(message)});
     }
 
+    function setPreferences_call(args, returnFct, handleError) {
+        var message = {"returnValue": true};
+        returnFct({payload: JSON.stringify(message)});
+    }
+
+
     function getPreferenceValues_call(args, returnFct, handleError) {
         //return preference values for locale
         var message = "";
@@ -303,6 +323,31 @@ QtObject {
         returnFct({payload: JSON.stringify(message)});
     }
 
+
+    function findNetworks_call(args, returnFct, handleError) {
+        //return WiFi networks
+        var message = {"returnValue":true, "foundNetworks":[{"networkInfo":{"signalLevel":25,"profileId":777,"ssid":"Test WiFi 1 Bar","signalBars":1,"supported":true,"availableSecurityTypes":["psk","wps"],"connectState":"ipConfigured"}},{"networkInfo":{"signalLevel":50,"ssid":"Test WiFi 2 Bars","signalBars":2,"supported":true,"availableSecurityTypes":["psk","wps"]}},{"networkInfo":{"signalLevel":75,"ssid":"Test WiFi 3 Bars","signalBars":3,"supported":true,"availableSecurityTypes":[]}}]};
+
+        returnFct({payload: JSON.stringify(message)});
+    }
+
+    function wifiConnect_call(args, returnFct, handleError) {
+        var message = {"returnValue":true};
+
+        returnFct({payload: JSON.stringify(message)});
+    }
+
+    function wanSet_call(args, returnFct, handleError) {
+        var message = {"returnValue":true};
+
+        returnFct({payload: JSON.stringify(message)});
+    }
+
+    function wifiSetState_call(args, returnFct, handleError) {
+        var message = {"returnValue":true};
+
+        returnFct({payload: JSON.stringify(message)});
+    }
 
     function getBatteryStatusQuery_call(args, returnFct, handleError) {
         var message = {

@@ -34,16 +34,6 @@ BasePage {
         id: service
         name: "org.webosports.app.firstuse"
         usePrivateBus: true
-/*        service: "luna://com.palm.systemservice"
-        method: "getPreferences"*/
-    }
-
-    LunaService {
-        id: setPreferences
-        name: "org.webosports.app.firstuse"
-        usePrivateBus: true
-        service: "luna://com.palm.systemservice"
-        method: "setPreferences"
     }
 
     Component.onCompleted: {

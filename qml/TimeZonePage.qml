@@ -138,7 +138,6 @@ BasePage {
                         }
 
                         //Make sure to save the settings right away.
-                        //console.log("ApplyingSelectedTimezone");
                         applySelectedTimezone(timezone2.City, timezone2.Description, timezone2.CountryCode, timezone2.Country, timezone2.supportsDST, timezone2.ZoneID, timezone2.offsetFromUTC, timezone2.preferred)
                     }
 
@@ -195,7 +194,15 @@ BasePage {
                 "preferred": true
             }
         }
-        service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), undefined, undefined)
+        service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setPreferencesSuccess, setPreferencesFailure)
+
+        function setPreferencesSuccess (message) {
+            console.log("Herrie setPrefsSuccess")
+                }
+
+        function setPreferencesFailure (message) {
+            console.log("Herrie setPrefsFailure")
+                }
     }
 
     ListModel {
