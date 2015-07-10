@@ -108,11 +108,11 @@ BasePage {
         service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setPreferencesSuccess, setPreferencesFailure);
 
         function setPreferencesSuccess (message) {
-            console.log("Herrie setPrefsSuccess")
+            console.log("setPreferencesSuccess")
                 }
 
         function setPreferencesFailure (message) {
-            console.log("Herrie setPrefsFailure")
+            console.log("setPreferencesFailure")
                 }
 
     }

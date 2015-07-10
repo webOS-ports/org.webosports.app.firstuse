@@ -76,7 +76,6 @@ BasePage {
                         for (var n = 0; n < response.timeZone.length; n++) {
                             var timezone = response.timeZone[n]
                             if (currentRegion === timezone.CountryCode) {
-                                console.log("Herrie currentRegion: "+currentRegion+ "timezone.CountryCode: "+timezone.CountryCode+" MATCHING currentTimezoneIndex: "+n);
                                 currentTimezoneIndex = n
                                 //For countries with multiple timezones, we need to have the preferred one
                                 if(timezone.preferred) {
@@ -220,7 +219,6 @@ BasePage {
                     filteredTimezoneModel.append(timezoneItem);
                 }
             }
-			console.log("sync + finalIndex: "+finalIndex);
 			timezoneList.currentIndex = finalIndex
             timezoneList.positionViewAtIndex(finalIndex, ListView.Center)
 

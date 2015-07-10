@@ -56,11 +56,11 @@ BasePage {
         service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setPreferencesSuccess, setPreferencesFailure);
 
         function setPreferencesSuccess (message) {
-            console.log("Herrie setPrefsSuccess")
+            console.log("setPreferencesSuccess")
                 }
 
         function setPreferencesFailure (message) {
-            console.log("Herrie setPrefsFailure")
+            console.log("setPreferencesFailure")
                 }
     }
 
@@ -69,7 +69,7 @@ BasePage {
         service.call("luna://com.palm.systemservice/getPreferences", JSON.stringify({keys: ["locale"]}), getPrefsSuccess, getPrefsFailure);
 
         function getPrefsSuccess(message) {
-            console.log("Herrie getPrefsSuccess");
+            console.log("getPreferencesSuccess");
                     var response = JSON.parse(message.payload);
 
                     if (response.locale !== undefined) {
@@ -81,7 +81,7 @@ BasePage {
                     service.call("luna://com.palm.systemservice/getPreferenceValues", JSON.stringify({key: "locale"}), fetchLocalesSuccess, fetchLocalesFailure);
 
                     function fetchLocalesSuccess (message) {
-                        console.log("Herrie fetchLocaleSuccess");
+                        console.log("fetchLocaleSuccess");
                                 var response = JSON.parse(message.payload);
                                 localeModel.clear();
 
@@ -118,14 +118,14 @@ BasePage {
                             }
 
                     function fetchLocalesFailure (message) {
-                        console.log("Herrie unable to fetch locales")
+                        console.log("Unable to fetch locales")
                             }
 
                 }
 
         function getPrefsFailure(message)
         {
-            console.log("Herrie Unable to fetch prefs")
+            console.log("Unable to fetch preferences")
         }
     }
 
@@ -158,7 +158,6 @@ BasePage {
         id: column
         anchors.fill: content
         spacing: Units.gu(1)
-        //clip: true
 
         TextField {
             id: filterTextField
