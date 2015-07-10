@@ -29,11 +29,53 @@ BasePage {
     Component.onCompleted: loadFileContent()
 
     function loadFileContent() {
+            var dummyText = "<html>
+            <p>
+            LuneOS is released for free non-commercial use.
+            </p>
+
+            <p>
+            It is provided without warranty, even the implied warranty of
+            merchantability, satisfaction or fitness for a particular use. See the
+            licence includedwith each program for details.
+            </p>
+
+            <p>
+            Some licences may grant additional rights.
+            </p>
+
+            <p>
+            This notice shall not limit your rights under each program's licence.
+            Licences for each program are available in the /usr/share/licenses
+            directory. Source code for LuneOS can be downloaded from
+            <a href=\"http://github.com/openwebos\">github.com/openwebos</a> and
+            <a href=\"http://github.com/webOS-ports\">github.com/webOS-ports</a>.
+            </p>
+
+            <p>
+            LuneOS is released for limited use due to the inclusion of binary hardware
+            support files.
+            </p>
+
+            <p>
+            The original components and licenses can be found at
+            <a href=\"https://developers.google.com/android/nexus/drivers\">developers.google.com/android/nexus/drivers</a>
+            </p>
+
+            </html>";
+
         var xhr = new XMLHttpRequest
         xhr.open("GET", "/usr/share/luneos-license-agreements/main_en.html");
         xhr.onreadystatechange = function() {
             if (xhr.readyState == XMLHttpRequest.DONE) {
-                termsLabel.text = xhr.responseText;
+                if(xhr.responseText !=="")
+                {
+                    termsLabel.text = xhr.responseText;
+                }
+                else
+                {
+                    termsLabel.text = dummyText;
+                }
             }
         }
         xhr.send()
