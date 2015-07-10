@@ -165,7 +165,7 @@ BasePage {
                     filteredTimezoneModel.syncWithFilter();
                 }
         function fetchAvailableTimezonesFailure (message) {
-            console.log("Herrie unable to fetch timezones")
+            console.log("Unable to fetch timezones")
                 }
     }
 
@@ -189,11 +189,11 @@ BasePage {
         service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setPreferencesSuccess, setPreferencesFailure)
 
         function setPreferencesSuccess (message) {
-            console.log("Herrie setPrefsSuccess")
+            console.log("setPreferencesSuccess")
                 }
 
         function setPreferencesFailure (message) {
-            console.log("Herrie setPrefsFailure")
+            console.log("Herrie setPreferencesFailure")
                 }
     }
 
