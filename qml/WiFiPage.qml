@@ -47,7 +47,7 @@ BasePage {
             service.call("luna://com.palm.wifi/findnetworks","{}",findNetworksSuccess, findNetworksFailure);
 
             function findNetworksSuccess (message) {
-                         console.log("findNetworksSuccess response: " + message.payload);
+                        console.log("findNetworksSuccess");
                         var response = JSON.parse(message.payload);
                         networksModel.clear();
                         if (response.foundNetworks && response.foundNetworks.length > 0) {

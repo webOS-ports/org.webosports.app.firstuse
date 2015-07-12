@@ -76,7 +76,6 @@ BasePage {
                         for (var n = 0; n < response.timeZone.length; n++) {
                             var timezone = response.timeZone[n]
                             if (currentRegion === timezone.CountryCode) {
-                                console.log("Herrie currentRegion: "+currentRegion+ "timezone.CountryCode: "+timezone.CountryCode+" MATCHING currentTimezoneIndex: "+n);
                                 currentTimezoneIndex = n
                                 //For countries with multiple timezones, we need to have the preferred one
                                 if(timezone.preferred) {
@@ -166,7 +165,7 @@ BasePage {
                     filteredTimezoneModel.syncWithFilter();
                 }
         function fetchAvailableTimezonesFailure (message) {
-            console.log("Herrie unable to fetch timezones")
+            console.log("Unable to fetch timezones")
                 }
     }
 
@@ -190,11 +189,11 @@ BasePage {
         service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setPreferencesSuccess, setPreferencesFailure)
 
         function setPreferencesSuccess (message) {
-            console.log("Herrie setPrefsSuccess")
+            console.log("setPreferencesSuccess")
                 }
 
         function setPreferencesFailure (message) {
-            console.log("Herrie setPrefsFailure")
+            console.log("Herrie setPreferencesFailure")
                 }
     }
 
@@ -220,7 +219,6 @@ BasePage {
                     filteredTimezoneModel.append(timezoneItem);
                 }
             }
-			console.log("sync + finalIndex: "+finalIndex);
 			timezoneList.currentIndex = finalIndex
             timezoneList.positionViewAtIndex(finalIndex, ListView.Center)
 
