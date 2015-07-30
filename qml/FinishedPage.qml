@@ -18,12 +18,21 @@
 import QtQuick 2.0
 import QtQuick.Controls 1.0
 import LunaNext.Common 0.1
+import LuneOS.Service 1.0
 import firstuse 1.0
+
+
 
 BasePage {
     title: "Everything setup!"
     forwardButtonSourceComponent: forwardButton
     hasBackButton: false
+
+    LunaService {
+                id: service
+                name: "org.webosports.app.firstuse"
+                usePrivateBus: true
+            }
 
     Column {
         id: column
@@ -34,7 +43,7 @@ BasePage {
             anchors.left: parent.left
             anchors.right: parent.right
             wrapMode: Text.Wrap
-            text: "Your device is now fully configured and ready to be used."
+            text: "Your device is now fully configured and ready to be used after a reboot."
             color: "white"
             font.pixelSize: FontUtils.sizeToPixels("medium")
         }
@@ -58,7 +67,7 @@ BasePage {
             anchors.left: parent.left
             anchors.right: parent.right
             wrapMode: Text.Wrap
-            text: "You can now start using your device. Enjoy it!"
+            text: "You can now start using your device after a reboot. Enjoy it!"
             color: "white"
             font.pixelSize: FontUtils.sizeToPixels("medium")
         }
@@ -68,10 +77,10 @@ BasePage {
     Component {
         id: forwardButton
         StackButton {
-            text: "Done!"
+            text: "Reboot!"
             onClicked: {
                 FirstUseUtils.markFirstUseDone();
-                window.finish();
+                service.call("luna://com.palm.power/shutdown/machineReboot", JSON.stringify({"reason":"Reboot request by User"}), null, null)
             }
         }
     }
