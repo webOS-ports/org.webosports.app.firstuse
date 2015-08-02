@@ -71,7 +71,7 @@ BasePage {
                 placeholderText: "Enter passphrase ..."
                 //Only becomes available in QT 5.5 with QtQuick.Controls.Styles 1.4
                 //passwordCharacter: "\u2022"
-
+                passwordCharacter: "•"
                 onActiveFocusChanged: {
                     if (passphrase.focus)
                         Qt.inputMethod.show();
