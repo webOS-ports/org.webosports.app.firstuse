@@ -43,7 +43,7 @@ BasePage {
             anchors.left: parent.left
             anchors.right: parent.right
             wrapMode: Text.Wrap
-            text: "Your device is now fully configured and ready to be used after a reboot."
+            text: "Your device is now fully configured and ready to be used."
             color: "white"
             font.pixelSize: FontUtils.sizeToPixels("medium")
         }
@@ -67,7 +67,7 @@ BasePage {
             anchors.left: parent.left
             anchors.right: parent.right
             wrapMode: Text.Wrap
-            text: "You can now start using your device after a reboot. Enjoy it!"
+            text: "You can now start using your device. Enjoy it!"
             color: "white"
             font.pixelSize: FontUtils.sizeToPixels("medium")
         }
@@ -77,10 +77,11 @@ BasePage {
     Component {
         id: forwardButton
         StackButton {
-            text: "Reboot!"
+            text: "Done!"
             onClicked: {
                 FirstUseUtils.markFirstUseDone();
-                service.call("luna://com.palm.power/shutdown/machineReboot", JSON.stringify({"reason":"Reboot request by User"}), null, null)
+                window.finish();
+                //service.call("luna://com.palm.power/shutdown/machineReboot", JSON.stringify({"reason":"Reboot request by User"}), null, null)
             }
         }
     }
