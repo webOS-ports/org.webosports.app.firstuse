@@ -17,7 +17,7 @@
 
 import QtQuick 2.0
 import QtQuick.Controls 1.0
-import QtWebKit 3.0
+import QtWebEngine 1.1
 
 BasePage {
     id: page
@@ -26,8 +26,8 @@ BasePage {
 
     customBack: true
 
-    WebView {
-        id: webView
+    WebEngineView {
+        id: webEngineView
         url: page.url
         anchors.fill: content
     }
