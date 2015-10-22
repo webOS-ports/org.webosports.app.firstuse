@@ -94,7 +94,7 @@ BasePage {
                 id: delegate
                 anchors.right: parent.right
                 anchors.left: parent.left
-                height: Units.gu(7)
+                height: Units.gu(6)
                 color: "transparent"
 
                 Text {
@@ -109,13 +109,13 @@ BasePage {
                     id: configContents
                     anchors.top: config.bottom
                     color: "white"
-                    font.pixelSize: FontUtils.sizeToPixels("medium")
+                    font.pixelSize: FontUtils.sizeToPixels("11pt")
                     text: configURL
                 }
 
                 Image {
                     id: feedEnabledToggleOff
-                    anchors.verticalCenter: delegate.verticalCenter
+                    anchors.verticalCenter: parent.verticalCenter
                     source: "images/toggle-button-off.png"
                     anchors.right: parent.right
                     anchors.rightMargin: Units.gu(1)
