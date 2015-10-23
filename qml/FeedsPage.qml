@@ -23,6 +23,102 @@ import LuneOS.Service 1.0
 BasePage {
     title: "Preware Feeds"
     forwardButtonSourceComponent: forwardButton
+    property bool overlayRectShown: false
+    property bool warningAccepted: false
+
+    Rectangle {
+        id: overlayRect
+        color: "#4C4C4C"
+        opacity: 0.9
+        anchors.fill: parent
+        visible: false
+        z: 1
+
+        MouseArea
+        {
+            anchors.fill: parent
+        }
+
+        Rectangle
+        {
+            id: messageRect
+            width: window.width * 0.8 > 300 ? 300 : window.width * 0.8
+            radius: Units.gu(0.8)
+            color: "#4c4c4c"
+            anchors.centerIn: parent
+            height: Units.gu(40)
+            z: 2
+            Text
+            {
+                id: title
+                text: "Non-webos-ports Feed"
+                font.bold: true
+                color: "white"
+                anchors.top: parent.top
+                anchors.topMargin: Units.gu(1)
+                anchors.left: parent.left
+                anchors.leftMargin: Units.gu(1)
+                font.pixelSize: FontUtils.sizeToPixels("16pt")
+                font.family: "Prelude"
+            }
+
+            Text
+            {
+                id: body
+                text: "<p>By adding a non-webos-ports feed, you're trusting both the package developers and feed maintainer, and that their sites haven't been hacked.</p><br><p>You take full responsibility for any and all potential outcomes that may occur as a result of doing so, including (but not limited to): loss of warranty, loss of all data, loss of all privacy, security vulnerabilities and device damage.</p>"
+                color: "white"
+                anchors.top: title.bottom
+                anchors.topMargin: Units.gu(1)
+                anchors.left: parent.left
+                anchors.leftMargin: Units.gu(1)
+                font.pixelSize: FontUtils.sizeToPixels("16pt")
+                font.family: "Prelude"
+                wrapMode: Text.WordWrap
+                width: parent.width - Units.gu(2)
+            }
+
+
+
+            StackButton {
+                id: okButton
+                    text: "OK"
+                    width: messageRect.width / 2 - Units.gu(1)
+                    anchors {
+                        left: parent.left
+                        bottom: parent.bottom
+                        leftMargin: Units.gu(1)
+                        bottomMargin: Units.gu(1)
+                    }
+                    onClicked: {
+                        warningAccepted = true
+                        overlayRect.visible = false
+                    }
+                }
+
+
+            StackButton {
+                id: backButton
+                width: messageRect.width / 2 - Units.gu(1)
+                anchors {
+                    right: parent.right
+                    bottom: parent.bottom
+                    rightMargin: Units.gu(1)
+                    bottomMargin: Units.gu(1)
+                }
+                text: "Cancel"
+                backArrow: true
+
+                onClicked:
+                {
+                    warningAccepted = false
+                    overlayRect.visible = false
+                }
+            }
+
+
+        }
+    }
+
 
     LunaService {
         id: service
@@ -91,6 +187,9 @@ BasePage {
             model: feedModel
 
             delegate: Rectangle {
+                property alias toggleOn: feedEnabledToggleOn.visible
+                property alias toggleOff: feedEnabledToggleOff.visible
+
                 id: delegate
                 anchors.right: parent.right
                 anchors.left: parent.left
@@ -126,9 +225,23 @@ BasePage {
                     MouseArea {
                         anchors.fill: parent
                         onPressed: {
-                            setFeedStatus (configConfig, !configEnabled)
-                            feedEnabledToggleOn.visible = true
-                            feedEnabledToggleOff.visible = false
+                            if (configConfig !== "webos-ports.conf" && !warningAccepted)
+                            {
+                                if(warningAccepted)
+                                {
+                                    feedEnabledToggleOn.visible = true
+                                    feedEnabledToggleOff.visible = false
+                                    setFeedStatus (configConfig, !configEnabled)
+                                }
+                                overlayRectShown = true
+                                overlayRect.visible = true
+                            }
+                            else
+                            {
+                                setFeedStatus (configConfig, !configEnabled)
+                                feedEnabledToggleOn.visible = true
+                                feedEnabledToggleOff.visible = false
+                            }
                         }
                     }
                     Text {
