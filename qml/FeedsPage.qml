@@ -23,7 +23,7 @@ import LuneOS.Service 1.0
 BasePage {
     title: "Preware Feeds"
     forwardButtonSourceComponent: forwardButton
-    property bool warningAccepted2: false
+    property bool acceptedWarning: false
 
     Rectangle {
         id: overlayRect
@@ -36,7 +36,7 @@ BasePage {
         property Item originDelegate
 
         function show(delegate) {
-            originDelegate = delegate;
+            overlayRect.originDelegate = delegate;
             overlayRect.visible=true;
         }
 
@@ -96,10 +96,10 @@ BasePage {
                         bottomMargin: Units.gu(1)
                     }
                     onClicked: {
-                        warningAccepted2 = true
-                        if(originDelegate)
+                        acceptedWarning = true
+                        if(overlayRect.originDelegate)
                         {
-                            originDelegate.warningAccepted()
+                            overlayRect.originDelegate.warningAccepted()
                         }
                         overlayRect.visible = false
                     }
@@ -241,20 +241,9 @@ BasePage {
                         anchors.fill: parent
 
                         onPressed: {
-                            if (configConfig !== "webos-ports.conf" && !warningAccepted2)
+                            if (configConfig !== "webos-ports.conf" && !acceptedWarning)
                             {
-
-                                //overlayConnection.target = overlayRect
-
                                 overlayRect.show(delegate)
-                                /* if(warningAccepted)
-                                {
-                                    feedEnabledToggleOn.visible = true
-                                    feedEnabledToggleOff.visible = false
-                                    setFeedStatus (configConfig, !configEnabled)
-                                }*/
-                              //  overlayRectShown = true
-                                //overlayRect.visible = true
                             }
                             else
                             {
