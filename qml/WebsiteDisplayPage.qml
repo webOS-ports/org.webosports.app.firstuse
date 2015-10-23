@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
+ * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +18,7 @@
 
 import QtQuick 2.0
 import QtQuick.Controls 1.0
-import QtWebKit 3.0
+import LuneOS.Components 1.0
 
 BasePage {
     id: page
@@ -26,8 +27,8 @@ BasePage {
 
     customBack: true
 
-    WebView {
-        id: webView
+    LunaWebEngineView {
+        id: webEngineView
         url: page.url
         anchors.fill: content
     }

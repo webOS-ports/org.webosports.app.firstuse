@@ -26,7 +26,7 @@ Window {
     width: Settings.displayWidth
     height: Settings.displayHeight
 
-    property variant pageList: [ "Welcome", "Locale", "Country", "TimeZone", "WiFi", "LicenseAgreement", "Finished" ]
+    property variant pageList: [ "Welcome", "Locale", "Country", "TimeZone", "WiFi", "Feeds", "LicenseAgreement", "Finished" ]
     property int currentPage: 0
 
     Component.onCompleted: {

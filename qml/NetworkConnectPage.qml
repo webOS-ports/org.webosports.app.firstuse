@@ -17,8 +17,8 @@
  */
 
 import QtQuick 2.0
-import QtQuick.Controls 1.0
-import QtQuick.Controls.Styles 1.3
+import QtQuick.Controls 1.4
+import QtQuick.Controls.Styles 1.4
 import LuneOS.Service 1.0
 import LunaNext.Common 0.1
 import firstuse 1.0
