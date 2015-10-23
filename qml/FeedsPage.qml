@@ -23,8 +23,7 @@ import LuneOS.Service 1.0
 BasePage {
     title: "Preware Feeds"
     forwardButtonSourceComponent: forwardButton
-    property bool overlayRectShown: false
-    property bool warningAccepted: false
+    property bool warningAccepted2: false
 
     Rectangle {
         id: overlayRect
@@ -33,6 +32,13 @@ BasePage {
         anchors.fill: parent
         visible: false
         z: 1
+
+        property Item originDelegate
+
+        function show(delegate) {
+            originDelegate = delegate;
+            overlayRect.visible=true;
+        }
 
         MouseArea
         {
@@ -90,7 +96,11 @@ BasePage {
                         bottomMargin: Units.gu(1)
                     }
                     onClicked: {
-                        warningAccepted = true
+                        warningAccepted2 = true
+                        if(originDelegate)
+                        {
+                            originDelegate.warningAccepted()
+                        }
                         overlayRect.visible = false
                     }
                 }
@@ -110,7 +120,6 @@ BasePage {
 
                 onClicked:
                 {
-                    warningAccepted = false
                     overlayRect.visible = false
                 }
             }
@@ -190,6 +199,12 @@ BasePage {
                 property alias toggleOn: feedEnabledToggleOn.visible
                 property alias toggleOff: feedEnabledToggleOff.visible
 
+                function warningAccepted() {
+                    feedEnabledToggleOn.visible = true;
+                    feedEnabledToggleOff.visible = false;
+                    setFeedStatus (configConfig, !configEnabled);
+                }
+
                 id: delegate
                 anchors.right: parent.right
                 anchors.left: parent.left
@@ -224,17 +239,22 @@ BasePage {
                     visible: !configEnabled
                     MouseArea {
                         anchors.fill: parent
+
                         onPressed: {
-                            if (configConfig !== "webos-ports.conf" && !warningAccepted)
+                            if (configConfig !== "webos-ports.conf" && !warningAccepted2)
                             {
-                                if(warningAccepted)
+
+                                //overlayConnection.target = overlayRect
+
+                                overlayRect.show(delegate)
+                                /* if(warningAccepted)
                                 {
                                     feedEnabledToggleOn.visible = true
                                     feedEnabledToggleOff.visible = false
                                     setFeedStatus (configConfig, !configEnabled)
-                                }
-                                overlayRectShown = true
-                                overlayRect.visible = true
+                                }*/
+                              //  overlayRectShown = true
+                                //overlayRect.visible = true
                             }
                             else
                             {
