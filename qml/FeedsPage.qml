@@ -27,7 +27,7 @@ BasePage {
 
     Rectangle {
         id: overlayRect
-        color: "#4C4C4C"
+        color: "#000000"
         opacity: 0.9
         anchors.fill: parent
         visible: false
@@ -48,11 +48,11 @@ BasePage {
         Rectangle
         {
             id: messageRect
-            width: window.width * 0.8 > 300 ? 300 : window.width * 0.8
+            width: window.width * 0.8 
             radius: Units.gu(0.8)
             color: "#4c4c4c"
             anchors.centerIn: parent
-            height: Units.gu(40)
+            height: title.height + body.contentHeight + Units.gu(8)
             z: 2
             Text
             {
