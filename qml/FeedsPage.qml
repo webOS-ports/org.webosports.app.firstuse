@@ -180,7 +180,7 @@ BasePage {
             anchors.left: parent.left
             anchors.right: parent.right
             wrapMode: Text.Wrap
-            text: "Select Preware feeds to enable"
+            text: "Select Preware (LuneOS App Catalog) feeds to enable"
             color: "white"
             font.pixelSize: FontUtils.sizeToPixels("medium")
         }
