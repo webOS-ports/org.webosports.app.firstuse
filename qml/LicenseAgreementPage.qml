@@ -18,7 +18,7 @@
 import QtQuick 2.0
 import QtQuick.Controls 1.0
 import QtQuick.Controls.Styles 1.0
-import QtWebKit 3.0
+import QtWebEngine 1.1
 import LunaNext.Common 0.1
 import "."
 
