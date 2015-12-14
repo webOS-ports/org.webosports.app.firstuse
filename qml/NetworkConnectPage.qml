@@ -59,6 +59,34 @@ BasePage {
             spacing: Units.gu(1)
 
             TextField {
+                id: username
+
+                height: Units.gu(4)
+
+                anchors.left: parent.left
+                anchors.right: parent.right
+
+                font.pixelSize: FontUtils.sizeToPixels("medium")
+                echoMode: TextInput.Normal
+                placeholderText: "Enter username ..."
+                visible: securityTypes.indexOf("ieee8021x") !== -1
+
+                onActiveFocusChanged: {
+                    if (username.focus)
+                        Qt.inputMethod.show();
+                    else
+                        Qt.inputMethod.hide();
+                }
+            }
+            Text {
+                id: usernameHint
+                visible: false
+                color: "red"
+                text: "Please enter a username!"
+                font.pixelSize: FontUtils.sizeToPixels("medium")
+            }
+
+            TextField {
                 id: passphrase
 
                 height: Units.gu(4)
@@ -105,21 +133,52 @@ BasePage {
     }
 
     function connectNetwork() {
+        usernameHint.visible = false;
+        passphraseHint.visible = false;
+
+        if(securityTypes.indexOf("ieee8021x") !== -1)
+        {
+            if (username.length === 0 || passphrase.length === 0) {
+                if(username.length === 0)
+                {
+                    usernameHint.visible = true;
+                }
+                if(passphrase.length === 0)
+                {
+                    passphraseHint.visible = true;
+                }
+                return;
+            }
+        }
+
         if (passphrase.length === 0) {
             passphraseHint.visible = true;
             return;
         }
 
-        passphraseHint.visible = false;
-
-        service.call("luna://com.palm.wifi/connect",JSON.stringify({
-            ssid: page.ssid,
-            security: {
-                simpleSecurity: {
-                    passKey: passphrase.text
-               }
-            }
-        }), networkConnectSuccess, networkConnectFailure)
+        if(securityTypes.indexOf("ieee8021x") !== -1)
+        {
+            service.call("luna://com.palm.wifi/connect",JSON.stringify({
+                ssid: page.ssid,
+                security: {
+                    enterpriseSecurity: {
+                        identityEAP: username.text,
+                        passKey: passphrase.text
+                   }
+                }
+            }), networkConnectSuccess, networkConnectFailure)
+        }
+        else
+        {
+            service.call("luna://com.palm.wifi/connect",JSON.stringify({
+                ssid: page.ssid,
+                security: {
+                    simpleSecurity: {
+                        passKey: passphrase.text
+                   }
+                }
+            }), networkConnectSuccess, networkConnectFailure)
+        }
 
         function networkConnectSuccess(message) {
                     console.log("networkConnectSuccess response: " + message.payload);

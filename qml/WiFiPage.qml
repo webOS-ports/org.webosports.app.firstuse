@@ -220,8 +220,9 @@ BasePage {
                         pageStack.push({ item: networkConnectPage, properties: { ssid: networkInfo.ssid, securityTypes: networkInfo.availableSecurityTypes }});
                     }
                     else if (networkInfo.availableSecurityTypes.indexOf("ieee8021x") !== -1) {
-                        console.log("Connecting with enterprise security ... NOT SUPPORTED YET!");
-                        networkList.setErrorMessage("Enterprise security networks are not supported yet");
+                        console.log("Connecting with enterprise security ... WIP!");
+                        pageStack.push({ item: networkConnectPage, properties: { ssid: networkInfo.ssid, securityTypes: networkInfo.availableSecurityTypes }});
+                        //networkList.setErrorMessage("Enterprise security networks are not supported yet");
                     }
                     else if (networkInfo.availableSecurityTypes.indexOf("wps") !== -1) {
                         console.log("Connecting with WPS ... NOT SUPPORTED YET!");
