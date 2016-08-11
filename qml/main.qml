@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
+ * Copyright (C) 2016 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +20,7 @@ import QtQuick 2.0
 import QtQuick.Window 2.0
 import QtQuick.Controls 1.0
 import LunaNext.Common 0.1
+import LuneOS.Service 1.0
 
 Window {
     id: window
@@ -29,7 +31,29 @@ Window {
     property variant pageList: [ "Welcome", "Locale", "Country", "TimeZone", "WiFi", "Feeds", "LicenseAgreement", "Finished" ]
     property int currentPage: 0
 
+    LunaService {
+        id: service
+        name: "org.webosports.app.firstuse"
+        usePrivateBus: true
+    }
+
     Component.onCompleted: {
+        //We only want to show the wifi page on devices that have acually wifi available. So we need to query device info first.
+        service.call("luna://com.palm.systemservice/deviceInfo/query",
+                     JSON.stringify({}),
+                     gotDeviceInfoSuccess, gotDeviceInfoFailure)
+
+        function gotDeviceInfoSuccess(message) {
+            var response = JSON.parse(message.payload)
+            if(response.device_name==="qemux86" || response.wifi_addr==="not supported"){
+                pageList = [ "Welcome", "Locale", "Country", "TimeZone", "Feeds", "LicenseAgreement", "Finished" ];
+            }
+        }
+
+        function gotDeviceInfoFailure(message) {
+            console.log("Failed to get deviceInfo: " + message.payload);
+        }
+
         window.visible = true;
     }
 
