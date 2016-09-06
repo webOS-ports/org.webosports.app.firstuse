@@ -178,8 +178,6 @@ BasePage {
 
             delegate: MouseArea {
                 id: delegate
-                anchors.right: parent.right
-                anchors.left: parent.left
                 height: Units.gu(4)
                 Text {
                     id: name

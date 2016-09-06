@@ -31,7 +31,7 @@ BasePage {
         var xhr = new XMLHttpRequest
         xhr.open("GET", "/usr/share/luneos-license-agreements/main_en.html");
         xhr.onreadystatechange = function() {
-            if (xhr.readyState == XMLHttpRequest.DONE) {
+            if (xhr.readyState === XMLHttpRequest.DONE) {
                 if(xhr.responseText !=="")
                 {
                     termsLabel.text = xhr.responseText;
@@ -42,7 +42,7 @@ BasePage {
                     var xhr2 = new XMLHttpRequest
                     xhr2.open("GET", "../test/imports/firstuse/main_en.html");
                     xhr2.onreadystatechange = function() {
-                        if (xhr.responseText == "" && xhr2.readyState == XMLHttpRequest.DONE ) {
+                        if (xhr.responseText === "" && xhr2.readyState === XMLHttpRequest.DONE ) {
                             if(xhr2.responseText !=="")
                             {
                                 termsLabel.text = xhr2.responseText;
