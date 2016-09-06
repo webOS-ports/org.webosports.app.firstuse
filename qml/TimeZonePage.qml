@@ -111,8 +111,8 @@ BasePage {
                                                    timezoneSupportsDST: timezone.supportsDST,
                                                    timezoneZoneID: timezone.ZoneID,
                                                    timezoneOffsetFromUTC: timezone.offsetFromUTC,
-                                                   timezoneOffsetSign: timezone.offsetFromUTC.toString().substring(0,1) == "-" ? "-" : "+",
-                                                   timezoneOffsetHours: timezone.offsetFromUTC.toString().substring(0,1) == "-" ? Math.floor(timezone.offsetFromUTC.toString().substring(1)/60) + ":" +(timezone.offsetFromUTC.toString().substring(1)%60+"00").substring(0,2): Math.floor(timezone.offsetFromUTC.toString()/60) + ":" +(timezone.offsetFromUTC.toString()%60+"00").substring(0,2),
+                                                   timezoneOffsetSign: timezone.offsetFromUTC.toString().substring(0,1) === "-" ? "-" : "+",
+                                                   timezoneOffsetHours: timezone.offsetFromUTC.toString().substring(0,1) === "-" ? Math.floor(timezone.offsetFromUTC.toString().substring(1)/60) + ":" +(timezone.offsetFromUTC.toString().substring(1)%60+"00").substring(0,2): Math.floor(timezone.offsetFromUTC.toString()/60) + ":" +(timezone.offsetFromUTC.toString()%60+"00").substring(0,2),
                                                    timezonePreferred: timezone.preferred ? timezone.preferred : false,
                                                    timezoneoffsetAdjustedTime: " | "+Qt.formatDateTime(offsetAdjustedTime, "h:mm")
                                                })
@@ -146,19 +146,16 @@ BasePage {
                     //Make sure we select the right one in the list
 
                     //Take the preferred one with smallest offset, regular prefered one or other available one
-                    if(currentTimezoneIndexPreferredOffset !== -1)
-					{
-						finalIndex = currentTimezoneIndexPreferredOffset;
-					}
-					else if (currentTimezoneIndexPreferred !== -1)
-					{
-						finalIndex = currentTimezoneIndexPreferred
-					}
-					else
-					{
-                        finalIndex = Math.max(currentTimezoneIndexPreferredTemp, currentTimezoneIndex);
-					}
-					
+                    if(currentTimezoneIndexPreferredOffset !== -1) {
+                        finalIndex = currentTimezoneIndexPreferredOffset;
+                    } else if (currentTimezoneIndexPreferred !== -1) {
+                        finalIndex = currentTimezoneIndexPreferred
+                    } else if (currentTimezoneIndexPreferredTemp !== -1) {
+                        finalIndex = currentTimezoneIndexPreferredTemp
+                    } else {
+                        finalIndex = currentTimezoneIndex;
+                    }
+
 					timezoneList.currentIndex = finalIndex
                     timezoneList.positionViewAtIndex(finalIndex, ListView.Center)
                     
@@ -250,9 +247,6 @@ BasePage {
 
             delegate: MouseArea {
                 id: delegate
-
-                anchors.right: parent.right
-                anchors.left: parent.left
                 height: Math.max(tzCountry.height+tzCity.height,
                                  tzDescription.height+tzOffset.height,
                                  tzCountry.height+tzDescription.height) + Units.gu(3.0)
