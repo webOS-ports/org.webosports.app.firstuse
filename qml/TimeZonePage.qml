@@ -1,6 +1,6 @@
 /*
 * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
-* Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
+* Copyright (C) 2015-2016 Herman van Hazendonk <github.com@herrie.org>
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -17,11 +17,14 @@
 */
 
 import QtQuick 2.3
-import QtQuick.Controls 1.0
+import QtQuick.Controls 1.4
 import QtQuick.Layouts 1.0
+
+import QtQuick.Controls.Styles 1.4
 import LunaNext.Common 0.1
 import LuneOS.Service 1.0
 import firstuse 1.0
+import QtQml 2.2
 import "js/GlobalState.js" as GlobalState
 
 
@@ -30,13 +33,18 @@ BasePage {
     forwardButtonSourceComponent: forwardButton
 
     property variant currentTimezone: null
-    property string currentRegion: ""
+    property string currentRegionCountry: ""
+    property string currentTimeFormat: ""
+    property string currentLocaleCountry: ""
+    property string currentLocaleLanguage: ""
+
     property int currentTimezoneIndex: -1
     property int currentDifference: -1
     property int currentTimezoneIndexPreferredTemp: -1
     property int currentTimezoneIndexPreferred: -1
     property int currentTimezoneIndexPreferredOffset: -1
     property int finalIndex: -1
+    property string timeFormat: "HH12"
 
     LunaService {
         id: service
@@ -47,128 +55,169 @@ BasePage {
 
     Component.onCompleted: {
         service.call("luna://com.palm.systemservice/getPreferences", JSON.stringify({
-                                              keys: ["region", "timeZone"]
+                                              keys: ["region", "timeZone", "timeFormat", "locale"]
                                           }), getPreferencesSuccess,
                            getPreferencesFailure)
     }
 
+    function fetchAvailableTimezonesSuccess (message) {
+                var response = JSON.parse(message.payload)
+
+                timezoneModel.clear()
+                if (response.timeZone && response.timeZone.length > 0) {
+                    for (var n = 0; n < response.timeZone.length; n++) {
+                        var timezone = response.timeZone[n]
+                        if (currentRegionCountry === timezone.CountryCode) {
+                            currentTimezoneIndex = n
+                            //For countries with multiple timezones, we need to have the preferred one
+                            if(timezone.preferred) {
+                                //Sometimes we have multiple preferred timezones per country, we need to make sure to pick the one with the right offset based on mcc
+                                if(timezone.offsetFromUTC === GlobalState.mccOffsetFromUTC) {
+                                    currentTimezoneIndexPreferredOffset = n
+                                }
+                                //Otherwise just use the zone with the shortest offset compared to current MCC
+                                else {
+                                    //Check if we already calculated a difference between a timezone and offset based on mcc
+                                    if(currentDifference == -1){
+                                        currentDifference = Math.abs(timezone.offsetFromUTC-GlobalState.mccOffsetFromUTC)
+                                        currentTimezoneIndexPreferredTemp = n
+                                    }
+                                    //Check if the difference for the current timezone is less compared to the previous difference stored
+                                    else if((timezone.offsetFromUTC-GlobalState.mccOffsetFromUTC)< currentDifference){
+                                        currentDifference = Math.abs(timezone.offsetFromUTC-GlobalState.mccOffsetFromUTC)
+                                        currentTimezoneIndexPreferredTemp = n
+                                    }
+                                }
+                            }
+                        }
+
+                        var offsetAdjustedTime = new Date();
+                        offsetAdjustedTime.setMinutes(offsetAdjustedTime.getMinutes() + timezone.offsetFromUTC);
+
+                        //Add each timezone to the model
+
+                        timezoneModel.append({
+                                               timezoneCity: timezone.City,
+                                               timezoneDescription: timezone.Description,
+                                               timezoneCountryCode: timezone.CountryCode,
+                                               timezoneCountry: timezone.Country,
+                                               timezoneSupportsDST: timezone.supportsDST,
+                                               timezoneZoneID: timezone.ZoneID,
+                                               timezoneOffsetFromUTC: timezone.offsetFromUTC,
+                                               timezoneOffsetSign: timezone.offsetFromUTC.toString().substring(0,1) === "-" ? "-" : "+",
+                                               timezoneOffsetHours: timezone.offsetFromUTC.toString().substring(0,1) === "-" ? Math.floor(timezone.offsetFromUTC.toString().substring(1)/60) + ":" +(timezone.offsetFromUTC.toString().substring(1)%60+"00").substring(0,2): Math.floor(timezone.offsetFromUTC.toString()/60) + ":" +(timezone.offsetFromUTC.toString()%60+"00").substring(0,2),
+                                               timezonePreferred: timezone.preferred ? timezone.preferred : false,
+                                               timezoneoffsetAdjustedTime: Qt.formatTime(offsetAdjustedTime, timeFormat === "HH24" ? "hh:mm" : "h:mm AP")
+                                           })
+                    }
+
+                    //This is a bit nasty but it will help us to find the right timezone and store it.
+                    var timezone2
+                    //Take the closest match based on both country, mcc offset
+                    if(currentTimezoneIndexPreferredOffset !== -1) {
+                        timezone2 = response.timeZone[currentTimezoneIndexPreferredOffset]
+                    }
+                    //Otherwise find closest "preferred" based on mcc
+                    else if(currentTimezoneIndexPreferredTemp !== -1) {
+                        timezone2 = response.timeZone[currentTimezoneIndexPreferredTemp]
+                    }
+                    //Take any preferred that's available
+                    else if(currentTimezoneIndexPreferred !== -1) {
+                        timezone2 = response.timeZone[currentTimezoneIndexPreferred]
+                    }
+                    //Otherwise just the country one (for countries with a single one)
+                    else {
+                        timezone2 = response.timeZone[currentTimezoneIndex]
+                    }
+
+                    //Make sure to save the settings right away.
+                    applySelectedTimezone(timezone2.City, timezone2.Description, timezone2.CountryCode, timezone2.Country, timezone2.supportsDST, timezone2.ZoneID, timezone2.offsetFromUTC, timezone2.preferred)
+                    applySelectedTimeFormat(timeFormat)
+                }
+
+                //Make sure we select the right one in the list
+
+                //Take the preferred one with smallest offset, regular prefered one or other available one
+                if(currentTimezoneIndexPreferredOffset !== -1) {
+                    finalIndex = currentTimezoneIndexPreferredOffset;
+                } else if (currentTimezoneIndexPreferred !== -1) {
+                    finalIndex = currentTimezoneIndexPreferred
+                } else if (currentTimezoneIndexPreferredTemp !== -1) {
+                    finalIndex = currentTimezoneIndexPreferredTemp
+                } else {
+                    finalIndex = currentTimezoneIndex;
+                }
+
+                timezoneList.currentIndex = finalIndex
+                timezoneList.positionViewAtIndex(finalIndex, ListView.Center)
+
+                filteredTimezoneModel.syncWithFilter();
+            }
+    function fetchAvailableTimezonesFailure (message) {
+        console.log("Unable to fetch timezones")
+            }
+
+
     function getPreferencesSuccess(message) {
+
         var response = JSON.parse(message.payload)
 
         if (response.region.countryCode !== undefined) {
-            currentRegion = response.region.countryCode.toUpperCase()
+            currentRegionCountry = response.region.countryCode.toUpperCase()
         }
 
         if (response.timeZone !== undefined) {
             currentTimezone = response.timeZone
         }
-		
+
+        //currently stored timeFormat
+        if (response.timeFormat !== undefined) {
+            currentTimeFormat = response.timeFormat
+        }
+        if (response.locale.countryCode !== undefined) {
+            currentLocaleCountry = response.locale.countryCode.toUpperCase()
+        }
+        if (response.locale.languageCode !== undefined) {
+            currentLocaleLanguage = response.locale.languageCode.toUpperCase()
+        }
+
+        var locale = Qt.locale(currentLocaleLanguage+"_"+currentLocaleCountry)
+
+        //Some can have 24 hr + AM/PM, so we need to check for that.
+        //If it has AM/PM indicator & small h we use HH12, in all other cases HH24
+        if(locale.timeFormat().toUpperCase().indexOf("A") !== -1 && locale.timeFormat().substring(0,1)==="h") {
+               timeFormat = "HH12"
+           }
+           else {
+               timeFormat = "HH24"
+           }
+
+        //We assume that the user would like to use the format that's the default for the locale and country that was selected.
+        if(currentTimeFormat!==timeFormat)
+        {
+            currentTimeFormat = timeFormat
+        }
+
+
         // now we can fetch all possible values and setup our model
         service.call("luna://com.palm.systemservice/getPreferenceValues", JSON.stringify({
                                                       key: "timeZone"
                                                   }), fetchAvailableTimezonesSuccess, fetchAvailableTimezonesFailure)
 
-        function fetchAvailableTimezonesSuccess (message) {
-                    var response = JSON.parse(message.payload)
-
-                    timezoneModel.clear()
-                    if (response.timeZone && response.timeZone.length > 0) {
-                        for (var n = 0; n < response.timeZone.length; n++) {
-                            var timezone = response.timeZone[n]
-                            if (currentRegion === timezone.CountryCode) {
-                                currentTimezoneIndex = n
-                                //For countries with multiple timezones, we need to have the preferred one
-                                if(timezone.preferred) {
-                                    //Sometimes we have multiple preferred timezones per country, we need to make sure to pick the one with the right offset based on mcc
-                                    if(timezone.offsetFromUTC === GlobalState.mccOffsetFromUTC) {
-                                        currentTimezoneIndexPreferredOffset = n
-                                    }
-                                    //Otherwise just use the zone with the shortest offset compared to current MCC
-                                    else {
-                                        //Check if we already calculated a difference between a timezone and offset based on mcc
-                                        if(currentDifference == -1){
-                                            currentDifference = Math.abs(timezone.offsetFromUTC-GlobalState.mccOffsetFromUTC)
-                                            currentTimezoneIndexPreferredTemp = n
-                                        }
-                                        //Check if the difference for the current timezone is less compared to the previous difference stored
-                                        else if((timezone.offsetFromUTC-GlobalState.mccOffsetFromUTC)< currentDifference){
-                                            currentDifference = Math.abs(timezone.offsetFromUTC-GlobalState.mccOffsetFromUTC)
-                                            currentTimezoneIndexPreferredTemp = n
-                                        }
-                                    }
-                                }
-                            }
-
-                            var offsetAdjustedTime = new Date();
-                            offsetAdjustedTime.setMinutes(offsetAdjustedTime.getMinutes() + timezone.offsetFromUTC);
-
-                            //Add each timezone to the model
-                            timezoneModel.append({
-                                                   timezoneCity: timezone.City,
-                                                   timezoneDescription: timezone.Description,
-                                                   timezoneCountryCode: timezone.CountryCode,
-                                                   timezoneCountry: timezone.Country,
-                                                   timezoneSupportsDST: timezone.supportsDST,
-                                                   timezoneZoneID: timezone.ZoneID,
-                                                   timezoneOffsetFromUTC: timezone.offsetFromUTC,
-                                                   timezoneOffsetSign: timezone.offsetFromUTC.toString().substring(0,1) === "-" ? "-" : "+",
-                                                   timezoneOffsetHours: timezone.offsetFromUTC.toString().substring(0,1) === "-" ? Math.floor(timezone.offsetFromUTC.toString().substring(1)/60) + ":" +(timezone.offsetFromUTC.toString().substring(1)%60+"00").substring(0,2): Math.floor(timezone.offsetFromUTC.toString()/60) + ":" +(timezone.offsetFromUTC.toString()%60+"00").substring(0,2),
-                                                   timezonePreferred: timezone.preferred ? timezone.preferred : false,
-                                                   timezoneoffsetAdjustedTime: " | "+Qt.formatDateTime(offsetAdjustedTime, "h:mm")
-                                               })
-
-
-                        }
-
-                        //This is a bit nasty but it will help us to find the right timezone and store it.
-                        var timezone2
-                        //Take the closest match based on both country, mcc offset
-                        if(currentTimezoneIndexPreferredOffset !== -1) {
-                            timezone2 = response.timeZone[currentTimezoneIndexPreferredOffset]
-                        }
-                        //Otherwise find closest "preferred" based on mcc
-                        else if(currentTimezoneIndexPreferredTemp !== -1) {
-                            timezone2 = response.timeZone[currentTimezoneIndexPreferredTemp]
-                        }
-                        //Take any preferred that's available
-                        else if(currentTimezoneIndexPreferred !== -1) {
-                            timezone2 = response.timeZone[currentTimezoneIndexPreferred]
-                        }
-                        //Otherwise just the country one (for countries with a single one)
-                        else {
-                            timezone2 = response.timeZone[currentTimezoneIndex]
-                        }
-
-                        //Make sure to save the settings right away.
-                        applySelectedTimezone(timezone2.City, timezone2.Description, timezone2.CountryCode, timezone2.Country, timezone2.supportsDST, timezone2.ZoneID, timezone2.offsetFromUTC, timezone2.preferred)
-                    }
-
-                    //Make sure we select the right one in the list
-
-                    //Take the preferred one with smallest offset, regular prefered one or other available one
-                    if(currentTimezoneIndexPreferredOffset !== -1) {
-                        finalIndex = currentTimezoneIndexPreferredOffset;
-                    } else if (currentTimezoneIndexPreferred !== -1) {
-                        finalIndex = currentTimezoneIndexPreferred
-                    } else if (currentTimezoneIndexPreferredTemp !== -1) {
-                        finalIndex = currentTimezoneIndexPreferredTemp
-                    } else {
-                        finalIndex = currentTimezoneIndex;
-                    }
-
-					timezoneList.currentIndex = finalIndex
-                    timezoneList.positionViewAtIndex(finalIndex, ListView.Center)
-                    
-                    filteredTimezoneModel.syncWithFilter();
-                }
-        function fetchAvailableTimezonesFailure (message) {
-            console.log("Unable to fetch timezones")
-                }
     }
 
     function getPreferencesFailure(message) {
         console.log("No regions found")
     }
+
+    function setPreferencesSuccess (message) {
+        console.log("Setting timeZone succeeded")
+            }
+
+    function setPreferencesFailure (message) {
+        console.log("Setting timeZone failed")
+            }
+
 
     function applySelectedTimezone(timezoneCity, timezoneDescription, timezoneCountryCode, timezoneCountry, timezoneSupportsDST, timezoneZoneID, timezoneOffsetFromUTC, timezonePreferred) {
         var request = {
@@ -185,13 +234,23 @@ BasePage {
         }
         service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setPreferencesSuccess, setPreferencesFailure)
 
-        function setPreferencesSuccess (message) {
-            console.log("setPreferencesSuccess")
-                }
+    }
 
-        function setPreferencesFailure (message) {
-            console.log("Herrie setPreferencesFailure")
-                }
+    function setTimeFormatSuccess (message) {
+        console.log("Setting timeFormat succeeded")
+            }
+
+    function setTimeFormatFailure (message) {
+        console.log("Setting timeFormat failed")
+            }
+
+    function applySelectedTimeFormat(timeFormat) {
+        var request = {
+            "timeFormat": timeFormat
+            }
+
+        service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setTimeFormatSuccess, setTimeFormatFailure)
+
     }
 
     ListModel {
@@ -210,28 +269,110 @@ BasePage {
                 var timezoneItem = timezoneModel.get(i);
                 var filterLowered = filter.toLowerCase();
                 if( filterLowered.length === 0 ||
-                    timezoneItem.timezoneCountry.toLowerCase().indexOf(filterLowered) >= 0 ||
-                    timezoneItem.timezoneCity.toLowerCase().indexOf(filterLowered) >= 0 )
+                        timezoneItem.timezoneCountry.toLowerCase().indexOf(filterLowered) >= 0 ||
+                        timezoneItem.timezoneCity.toLowerCase().indexOf(filterLowered) >= 0 )
                 {
                     filteredTimezoneModel.append(timezoneItem);
                 }
             }
-			timezoneList.currentIndex = finalIndex
+            timezoneList.currentIndex = finalIndex
             timezoneList.positionViewAtIndex(finalIndex, ListView.Center)
 
         }
     }
 
+
+
     Column {
         id: column
         anchors.fill: content
-        spacing: Units.gu(5)
+        spacing: Units.gu(2)
+
+        Row {
+            id: timeFormatRow
+            width: parent.width
+            Column{
+                anchors.verticalCenter: timeFormatRow.verticalCenter
+                width: parent.width - Units.gu(8)
+                Text {
+                    id: timeFormatText
+                    text: "Time Format"
+                    font.pixelSize: Units.gu(36/13.5)
+                    color: "white"
+                    anchors.left: parent.left
+                    width: parent.width - Units.gu(8)
+                }
+            }
+            Column
+            {
+                anchors.verticalCenter: timeFormatRow.verticalCenter
+                Switch
+                {
+                    id: timeFormatSwitch
+                    anchors.right: parent.right
+                    checked: currentTimeFormat === "HH12" ? false : true
+                    style: SwitchStyle {
+                        groove: Image
+                        {
+                        id: grooveImage
+                        source: timeFormatSwitch.checked ? "images/toggle-button-on.png" : "images/toggle-button-off.png"
+                        width: Units.gu(8)
+                        height: Units.gu(4)
+
+                        Text
+                        {
+                            color: "white"
+                            text: "24H"
+                            font.bold: true
+                            font.family: "Prelude"
+                            font.pixelSize: FontUtils.sizeToPixels("small")
+                            visible: timeFormatSwitch.checked
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.left: parent.left
+                            anchors.leftMargin: Units.gu(1)
+                        }
+                        Text
+                        {
+                            color: "white"
+                            text: "12H"
+                            font.bold: true
+                            font.family: "Prelude"
+                            font.pixelSize: FontUtils.sizeToPixels("small")
+                            visible: !timeFormatSwitch.checked
+                            anchors.verticalCenter: parent.verticalCenter
+                            anchors.right: parent.right
+                            anchors.rightMargin: Units.gu(1)
+                        }
+
+                    }
+                    handle: Rectangle {
+                        color: "transparent"
+                    }
+                }
+                onClicked:
+                {
+                    timeFormat = timeFormatSwitch.checked ? "HH24" : "HH12"
+                    service.call("luna://com.palm.systemservice/getPreferenceValues", JSON.stringify({
+                                                                  key: "timeZone"
+                                                              }), fetchAvailableTimezonesSuccess, fetchAvailableTimezonesFailure)
+
+                    applySelectedTimeFormat(timeFormat)
+                }
+            }
+        }
+    }
 
         TextField {
             id: filterTextField
             placeholderText: "Filter list..."
             height: Units.gu(4)
             font.pixelSize: Units.gu(36/13.5)
+            width: parent.width
+            style: TextFieldStyle {
+                background: Rectangle {
+                    radius: 5
+                }
+            }
         }
 
         ListView {
@@ -249,7 +390,8 @@ BasePage {
                 id: delegate
                 height: Math.max(tzCountry.height+tzCity.height,
                                  tzDescription.height+tzOffset.height,
-                                 tzCountry.height+tzDescription.height) + Units.gu(3.0)
+                                 tzCountry.height+tzDescription.height) + Units.gu(4.0)
+                width: timezoneList.width
 
                 Text {
                     id: tzCountry
@@ -259,7 +401,7 @@ BasePage {
                     anchors.left: parent.left
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
                     font.pixelSize: Units.gu(36/13.5) // 1/13.5 = 1/72*96/18
-                    text: timezoneCountry
+                    text: timezoneCountry ? timezoneCountry : ""
                     font.bold: true
                     wrapMode: Text.WordWrap
                 }
@@ -269,7 +411,7 @@ BasePage {
                     anchors.top: tzCountry.bottom
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
                     font.pixelSize: Units.gu(22/13.5)
-                    text: timezoneCity
+                    text: timezoneCity ? timezoneCity : ""
                     font.bold: true
                     wrapMode: Text.WordWrap
                 }
@@ -292,7 +434,7 @@ BasePage {
                     anchors.right: parent.right
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
                     font.pixelSize: Units.gu(36/13.5)
-                    text: timezoneoffsetAdjustedTime
+                    text: " | "+timezoneoffsetAdjustedTime
                     font.bold: true
                     horizontalAlignment: Text.AlignRight
                     wrapMode: Text.WordWrap
@@ -304,7 +446,7 @@ BasePage {
                     anchors.right: parent.right
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
                     font.pixelSize: Units.gu(22/13.5)
-                    text: timezoneDescription
+                    text: timezoneDescription ? timezoneDescription : ""
                     font.bold: true
                     horizontalAlignment: Text.AlignRight
                     wrapMode: Text.WordWrap
@@ -331,6 +473,7 @@ BasePage {
             }
         }
     }
+
 
     Component {
         id: forwardButton
