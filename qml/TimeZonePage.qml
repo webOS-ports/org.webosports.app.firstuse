@@ -178,7 +178,7 @@ BasePage {
             currentLocaleCountry = response.locale.countryCode.toUpperCase()
         }
         if (response.locale.languageCode !== undefined) {
-            currentLocaleLanguage = response.locale.languageCode.toUpperCase()
+            currentLocaleLanguage = response.locale.languageCode
         }
 
         var locale = Qt.locale(currentLocaleLanguage+"_"+currentLocaleCountry)
