@@ -95,7 +95,7 @@ BasePage {
                         var utcTime = new Date()
 
                         //Check if DST is being applied currently
-                        var inDST = isDST(new Date())
+                        var inDST = isDST(new Date()) && timezone.supportsDST
 
                         //In case DST is applied we need to adjust for 1 hr
                         var dstCorrection = inDST ? timezone.supportsDST * 60 : 0
@@ -105,10 +105,13 @@ BasePage {
 
                         //Calculate the difference in hours and minutes, indicate if we're in DST.
                         var dstDifference
+                        var dstOffset = ""
                         if(inDST){
-                            dstDifference = ((timezone.offsetFromUTC+dstCorrection).toString().substring(0,1) === "-" ? Math.floor((timezone.offsetFromUTC+dstCorrection).toString().substring(1)/60) + ":" +((timezone.offsetFromUTC+dstCorrection).toString().substring(1)%60+"00").substring(0,2): Math.floor((timezone.offsetFromUTC+dstCorrection).toString()/60) + ":" +((timezone.offsetFromUTC+dstCorrection).toString()%60+"00").substring(0,2) )+ " (DST +1:00)"
+                            dstDifference = ((timezone.offsetFromUTC+dstCorrection).toString().substring(0,1) === "-" ? Math.floor((timezone.offsetFromUTC+dstCorrection).toString().substring(1)/60) + ":" +((timezone.offsetFromUTC+dstCorrection).toString().substring(1)%60+"00").substring(0,2): Math.floor((timezone.offsetFromUTC+dstCorrection).toString()/60) + ":" +((timezone.offsetFromUTC+dstCorrection).toString()%60+"00").substring(0,2) )
+                            dstOffset = "(DST +1:00)"
                         } else {
                             dstDifference = timezone.offsetFromUTC.toString().substring(0,1) === "-" ? Math.floor(timezone.offsetFromUTC.toString().substring(1)/60) + ":" +(timezone.offsetFromUTC.toString().substring(1)%60+"00").substring(0,2): Math.floor(timezone.offsetFromUTC.toString()/60) + ":" +(timezone.offsetFromUTC.toString()%60+"00").substring(0,2)
+							dstOffset = ""
                         }
 
                         //Calculate the local time in a specific timezone, adjusted for DST etc, based on the current time.
@@ -132,6 +135,7 @@ BasePage {
                                                timezoneOffsetFromUTC: timezone.offsetFromUTC,
                                                timezoneOffsetSign: timezone.offsetFromUTC.toString().substring(0,1) === "-" ? "-" : "+",
                                                timezoneOffsetHours: dstDifference,
+                                               timezoneOffsetDST: dstOffset,
                                                timezonePreferred: timezone.preferred ? timezone.preferred : false,
                                                timezoneoffsetAdjustedTime: Qt.formatTime(utcTime, timeFormat === "HH24" ? "hh:mm" : "h:mm AP")
                                            })
@@ -426,7 +430,7 @@ BasePage {
                     anchors.topMargin: Units.gu(1.5)
                     anchors.left: parent.left
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
-                    font.pixelSize: Units.gu(36/13.5) // 1/13.5 = 1/72*96/18
+                    font.pixelSize: FontUtils.sizeToPixels("20pt")
                     text: timezoneCountry ? timezoneCountry : ""
                     font.bold: true
                     wrapMode: Text.WordWrap
@@ -436,7 +440,7 @@ BasePage {
                     width: parent.width / 2
                     anchors.top: tzCountry.bottom
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
-                    font.pixelSize: Units.gu(22/13.5)
+                    font.pixelSize: FontUtils.sizeToPixels("13pt")
                     text: timezoneCity ? timezoneCity : ""
                     font.bold: true
                     wrapMode: Text.WordWrap
@@ -444,22 +448,40 @@ BasePage {
                 Text {
                     id: tzOffset
                     width: content.width
-                    anchors.verticalCenter: tzTime.verticalCenter
-                    anchors.rightMargin: Units.gu(0.3)
-                    anchors.right: tzTime.left
+                    anchors.top: timezoneOffsetDST !=="" ? parent.top : undefined
+                    anchors.topMargin: timezoneOffsetDST !=="" ? Units.gu(1.5) : undefined
+                    anchors.verticalCenter: timezoneOffsetDST ==="" ? tzTime.verticalCenter : undefined
+                    anchors.rightMargin: timezoneOffsetDST ==="" ? Units.gu(0.3) : undefined
+                    anchors.right: timezoneOffsetDST ==="" ? tzTime.left : undefined
+                    anchors.horizontalCenter: timezoneOffsetDST !=="" ? tzOffsetDST.horizontalCenter : undefined
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
-                    font.pixelSize: Units.gu(22/13.5)
+                    font.pixelSize: FontUtils.sizeToPixels("11pt")
                     text: timezoneOffsetHours==="0:00" ? "UTC " : "UTC " + timezoneOffsetSign + timezoneOffsetHours
                     font.bold: true
                     horizontalAlignment: Text.AlignRight
                     wrapMode: Text.NoWrap
+                    visible: true
+                }
+                Text {
+                    id: tzOffsetDST
+                    width: content.width
+                    anchors.top: tzOffset.bottom
+                    anchors.rightMargin: Units.gu(0.2)
+                    anchors.right: tzTime.left
+                    color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
+                    font.pixelSize: FontUtils.sizeToPixels("9pt")
+                    text: timezoneOffsetDST
+                    font.bold: true
+                    horizontalAlignment: Text.AlignRight
+                    wrapMode: Text.NoWrap
+                    visible: timezoneOffsetDST !==""
                 }
                 Text {
                     id: tzTime
                     anchors.top: tzCountry.top
                     anchors.right: parent.right
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
-                    font.pixelSize: Units.gu(36/13.5)
+                    font.pixelSize: FontUtils.sizeToPixels("20pt")
                     text: " | "+timezoneoffsetAdjustedTime
                     font.bold: true
                     horizontalAlignment: Text.AlignRight
@@ -471,7 +493,7 @@ BasePage {
                     anchors.top: tzCity.top
                     anchors.right: parent.right
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
-                    font.pixelSize: Units.gu(22/13.5)
+                    font.pixelSize: FontUtils.sizeToPixels("13pt")
                     text: timezoneDescription ? timezoneDescription : ""
                     font.bold: true
                     horizontalAlignment: Text.AlignRight
