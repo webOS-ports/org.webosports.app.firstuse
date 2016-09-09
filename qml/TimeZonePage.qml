@@ -91,8 +91,34 @@ BasePage {
                             }
                         }
 
-                        var offsetAdjustedTime = new Date();
-                        offsetAdjustedTime.setMinutes(offsetAdjustedTime.getMinutes() + timezone.offsetFromUTC);
+                        //Get the current date/time
+                        var utcTime = new Date()
+
+                        //Check if DST is being applied currently
+                        var inDST = isDST(new Date())
+
+                        //In case DST is applied we need to adjust for 1 hr
+                        var dstCorrection = inDST ? timezone.supportsDST * 60 : 0
+
+                        //We need to correct for DST in the offset we receive from our timezone table
+                        var dstDifferenceTemp = timezone.offsetFromUTC + dstCorrection
+
+                        //Calculate the difference in hours and minutes, indicate if we're in DST.
+                        var dstDifference
+                        if(inDST){
+                            dstDifference = ((timezone.offsetFromUTC+dstCorrection).toString().substring(0,1) === "-" ? Math.floor((timezone.offsetFromUTC+dstCorrection).toString().substring(1)/60) + ":" +((timezone.offsetFromUTC+dstCorrection).toString().substring(1)%60+"00").substring(0,2): Math.floor((timezone.offsetFromUTC+dstCorrection).toString()/60) + ":" +((timezone.offsetFromUTC+dstCorrection).toString()%60+"00").substring(0,2) )+ " (DST +1:00)"
+                        } else {
+                            dstDifference = timezone.offsetFromUTC.toString().substring(0,1) === "-" ? Math.floor(timezone.offsetFromUTC.toString().substring(1)/60) + ":" +(timezone.offsetFromUTC.toString().substring(1)%60+"00").substring(0,2): Math.floor(timezone.offsetFromUTC.toString()/60) + ":" +(timezone.offsetFromUTC.toString()%60+"00").substring(0,2)
+                        }
+
+                        //Calculate the local time in a specific timezone, adjusted for DST etc, based on the current time.
+                        utcTime.setUTCMinutes(utcTime.getUTCMinutes()+new Date().getTimezoneOffset()+dstDifferenceTemp);
+
+                        function isDST(t) { //t is the date object to check, returns true if daylight saving time is in effect.
+                            var jan = new Date(t.getFullYear(),0,1);
+                            var jul = new Date(t.getFullYear(),6,1);
+                            return Math.min(jan.getTimezoneOffset(),jul.getTimezoneOffset()) === t.getTimezoneOffset();
+                        }
 
                         //Add each timezone to the model
 
@@ -105,9 +131,9 @@ BasePage {
                                                timezoneZoneID: timezone.ZoneID,
                                                timezoneOffsetFromUTC: timezone.offsetFromUTC,
                                                timezoneOffsetSign: timezone.offsetFromUTC.toString().substring(0,1) === "-" ? "-" : "+",
-                                               timezoneOffsetHours: timezone.offsetFromUTC.toString().substring(0,1) === "-" ? Math.floor(timezone.offsetFromUTC.toString().substring(1)/60) + ":" +(timezone.offsetFromUTC.toString().substring(1)%60+"00").substring(0,2): Math.floor(timezone.offsetFromUTC.toString()/60) + ":" +(timezone.offsetFromUTC.toString()%60+"00").substring(0,2),
+                                               timezoneOffsetHours: dstDifference,
                                                timezonePreferred: timezone.preferred ? timezone.preferred : false,
-                                               timezoneoffsetAdjustedTime: Qt.formatTime(offsetAdjustedTime, timeFormat === "HH24" ? "hh:mm" : "h:mm AP")
+                                               timezoneoffsetAdjustedTime: Qt.formatTime(utcTime, timeFormat === "HH24" ? "hh:mm" : "h:mm AP")
                                            })
                     }
 
