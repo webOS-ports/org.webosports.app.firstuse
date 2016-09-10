@@ -18,6 +18,7 @@
 import QtQuick 2.0
 import QtQuick.Controls 1.0
 import QtQuick.Layouts 1.0
+import QtQuick.Controls.Styles 1.4
 import LuneOS.Service 1.0
 import LunaNext.Common 0.1
 import firstuse 1.0
@@ -164,8 +165,13 @@ BasePage {
             placeholderText: "Filter list..."
             height: Units.gu(4)
             font.pixelSize: Units.gu(36/13.5)
+            width: parent.width * 0.95
+            style: TextFieldStyle {
+                background: Rectangle {
+                    radius: 5
+                }
+            }
         }
-
 		
         ListView {
             id: localeList
@@ -179,6 +185,7 @@ BasePage {
             delegate: MouseArea {
                 id: delegate
                 height: Units.gu(4)
+                width: localeList.width
                 Text {
                     id: name
                     anchors.fill: parent
