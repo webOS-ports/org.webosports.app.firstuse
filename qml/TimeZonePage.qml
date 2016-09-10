@@ -137,7 +137,7 @@ BasePage {
                                                timezoneOffsetHours: dstDifference,
                                                timezoneOffsetDST: dstOffset,
                                                timezonePreferred: timezone.preferred ? timezone.preferred : false,
-                                               timezoneoffsetAdjustedTime: Qt.formatTime(utcTime, timeFormat === "HH24" ? "hh:mm" : "h:mm AP")
+                                               timezoneoffsetAdjustedTime: utcTime
                                            })
                     }
 
@@ -382,10 +382,6 @@ BasePage {
                 onClicked:
                 {
                     timeFormat = timeFormatSwitch.checked ? "HH24" : "HH12"
-                    service.call("luna://com.palm.systemservice/getPreferenceValues", JSON.stringify({
-                                                                  key: "timeZone"
-                                                              }), fetchAvailableTimezonesSuccess, fetchAvailableTimezonesFailure)
-
                     applySelectedTimeFormat(timeFormat)
                 }
             }
@@ -482,7 +478,7 @@ BasePage {
                     anchors.right: parent.right
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
                     font.pixelSize: FontUtils.sizeToPixels("20pt")
-                    text: " | "+timezoneoffsetAdjustedTime
+                    text: " | "+ Qt.formatTime(timezoneoffsetAdjustedTime, timeFormat === "HH24" ? "hh:mm" : "h:mm AP")
                     font.bold: true
                     horizontalAlignment: Text.AlignRight
                     wrapMode: Text.WordWrap
