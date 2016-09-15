@@ -97,14 +97,18 @@ BasePage {
                 font.pixelSize: FontUtils.sizeToPixels("medium")
                 echoMode: showPassphrase.checked ? TextInput.Normal : TextInput.Password
                 placeholderText: "Enter passphrase ..."
-                //Only becomes available in QT 5.5 with QtQuick.Controls.Styles 1.4
-                //passwordCharacter: "\u2022"
-                passwordCharacter: "•"
                 onActiveFocusChanged: {
                     if (passphrase.focus)
                         Qt.inputMethod.show();
                     else
                         Qt.inputMethod.hide();
+                }
+                style: TextFieldStyle {
+                    passwordCharacter: "•"
+                    background: Rectangle {
+                        radius: 5
+                    }
+
                 }
             }
 
@@ -121,6 +125,13 @@ BasePage {
                 checked: false
                 text: "Show passphrase"
                 style: CheckBoxStyle {
+                    indicator: Image
+                    {
+                        source: control.checked ? "images/checkbox-checked.png" : "images/checkbox-unchecked.png"
+                        height: Units.gu(2.4)
+                        width: Units.gu(2.4)
+                    }
+
                     spacing: Units.gu(0.5)
                     label: Text {
                         color: "white"
