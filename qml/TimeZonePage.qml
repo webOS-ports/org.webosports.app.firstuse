@@ -29,8 +29,10 @@ import "js/GlobalState.js" as GlobalState
 
 
 BasePage {
+    id: root
     title: "Select your Timezone"
     forwardButtonSourceComponent: forwardButton
+    keyboardFocusItem: filterTextField
 
     property variant currentTimezone: null
     property string currentRegionCountry: ""
@@ -46,12 +48,14 @@ BasePage {
     property int finalIndex: -1
     property string timeFormat: "HH12"
 
+    signal tzUpdated;
+    onCurrentTimeFormatChanged: tzUpdated();
+
     LunaService {
         id: service
         name: "org.webosports.app.firstuse"
         usePrivateBus: true
     }
-
 
     Component.onCompleted: {
         service.call("luna://com.palm.systemservice/getPreferences", JSON.stringify({
@@ -59,6 +63,8 @@ BasePage {
                                           }), getPreferencesSuccess,
                            getPreferencesFailure)
     }
+
+    Stack.onStatusChanged: tzUpdated();
 
     function fetchAvailableTimezonesSuccess (message) {
                 var response = JSON.parse(message.payload)
@@ -115,7 +121,7 @@ BasePage {
                         }
 
                         //Calculate the local time in a specific timezone, adjusted for DST etc, based on the current time.
-                        utcTime.setUTCMinutes(utcTime.getUTCMinutes()+new Date().getTimezoneOffset()+dstDifferenceTemp);
+                        //utcTime.setUTCMinutes(utcTime.getUTCMinutes()+new Date().getTimezoneOffset()+dstDifferenceTemp);
 
                         function isDST(t) { //t is the date object to check, returns true if daylight saving time is in effect.
                             var jan = new Date(t.getFullYear(),0,1);
@@ -137,7 +143,8 @@ BasePage {
                                                timezoneOffsetHours: dstDifference,
                                                timezoneOffsetDST: dstOffset,
                                                timezonePreferred: timezone.preferred ? timezone.preferred : false,
-                                               timezoneoffsetAdjustedTime: utcTime
+                                               timezoneoffsetAdjustedTime: utcTime,
+                                               timezoneDSTCorrection: dstCorrection
                                            })
                     }
 
@@ -195,10 +202,11 @@ BasePage {
         if (response.region.countryCode !== undefined) {
             currentRegionCountry = response.region.countryCode.toUpperCase()
         }
-
+/*
         if (response.timeZone !== undefined) {
             currentTimezone = response.timeZone
         }
+*/
 
         //currently stored timeFormat
         if (response.timeFormat !== undefined) {
@@ -240,9 +248,12 @@ BasePage {
         console.log("No regions found")
     }
 
-    function setPreferencesSuccess (message) {
+    function setPreferencesSuccess (request) {
         console.log("Setting timeZone succeeded")
-            }
+        currentTimezone = request.timeZone;
+        Date.timeZoneUpdated();
+        tzUpdated();
+    }
 
     function setPreferencesFailure (message) {
         console.log("Setting timeZone failed")
@@ -262,7 +273,7 @@ BasePage {
                 "preferred": true
             }
         }
-        service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setPreferencesSuccess, setPreferencesFailure)
+        service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setPreferencesSuccess(request), setPreferencesFailure)
 
     }
 
@@ -295,6 +306,7 @@ BasePage {
 
         function syncWithFilter() {
             filteredTimezoneModel.clear()
+            var index = -1;
             for( var i = 0; i < timezoneModel.count; ++i ) {
                 var timezoneItem = timezoneModel.get(i);
                 var filterLowered = filter.toLowerCase();
@@ -303,10 +315,16 @@ BasePage {
                         timezoneItem.timezoneCity.toLowerCase().indexOf(filterLowered) >= 0 )
                 {
                     filteredTimezoneModel.append(timezoneItem);
+                    if ( (currentTimezone.City === timezoneItem.timezoneCity)
+                       &&(currentTimezone.Description === timezoneItem.timezoneDescription)
+                       &&(currentTimezone.CountryCode === timezoneItem.timezoneCountryCode) )
+                    {
+                        index = filteredTimezoneModel.count - 1;
+                    }
                 }
             }
-            timezoneList.currentIndex = finalIndex
-            timezoneList.positionViewAtIndex(finalIndex, ListView.Center)
+            timezoneList.currentIndex = index
+            timezoneList.positionViewAtIndex(index, ListView.Center)
 
         }
     }
@@ -405,7 +423,7 @@ BasePage {
             id: timezoneList
             anchors.left: parent.left
             anchors.right: parent.right
-            height: column.height - column.spacing - filterTextField.height
+            height: column.height - column.spacing - filterTextField.height - timeFormatRow.height - column.spacing
             snapMode: ListView.SnapToItem	
 
             clip: true
@@ -478,10 +496,21 @@ BasePage {
                     anchors.right: parent.right
                     color: delegate.ListView.isCurrentItem ? "white" : "#6e83a3"
                     font.pixelSize: FontUtils.sizeToPixels("20pt")
-                    text: " | "+ Qt.formatTime(timezoneoffsetAdjustedTime, timeFormat === "HH24" ? "hh:mm" : "h:mm AP")
+                    text: ""
                     font.bold: true
                     horizontalAlignment: Text.AlignRight
                     wrapMode: Text.WordWrap
+
+                    Component.onCompleted: root.tzUpdated();
+
+                    Connections {
+                        target: root
+                        onTzUpdated: {
+                            var adjustedTime =  new Date();
+                            adjustedTime.setUTCMinutes(adjustedTime.getUTCMinutes() + timezoneDSTCorrection + timezoneOffsetFromUTC + adjustedTime.getTimezoneOffset());
+                            tzTime.text = " | " + Qt.formatTime(adjustedTime, timeFormat === "HH24"? "hh:mm": "h:mm AP");
+                        }
+                    }
                 }
                 Text {
                     id: tzDescription
@@ -518,6 +547,12 @@ BasePage {
         }
     }
 
+    Timer {
+        interval: 1000
+        onTriggered: root.tzUpdated();
+        repeat: true
+        running: parent.Stack.status === Stack.Active
+    }
 
     Component {
         id: forwardButton

@@ -258,6 +258,8 @@ BasePage {
                     }
                     onClicked:
                     {
+                        //revert check
+                        checked = Qt.binding( function () { return configEnabled; } );
                         if (configConfig !== "webos-ports.conf" && !acceptedWarning) {
                             overlayRect.show(delegate)
                         } else {
@@ -273,13 +275,18 @@ BasePage {
                         enabled: enabled
                     }
 
-                    service.call("luna://org.webosinternals.ipkgservice/setConfigState", JSON.stringify(params), setConfigSuccess,
+                    service.call("luna://org.webosinternals.ipkgservice/setConfigState", JSON.stringify(params), setConfigSuccess(params),
                                        setConfigFailure)
                 }
 
-                function setConfigSuccess(message) {
-                    var response = JSON.parse(message.payload)
-                    console.log("Successfully set feed config")
+                function setConfigSuccess(params) {
+                    console.log("Successfully set feed config");
+                    for (var i=0; i<feedModel.count; i++) {
+                        var feed = feedModel.get(i);
+                        if (feed.configConfig === params.config) {
+                            feedModel.setProperty(i, "configEnabled", params.enabled);
+                        }
+                    }
                 }
 
                 function setConfigFailure(message) {

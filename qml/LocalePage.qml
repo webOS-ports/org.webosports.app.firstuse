@@ -28,6 +28,7 @@ BasePage {
 
     title: "Select your Language"
     forwardButtonSourceComponent: forwardButton
+    keyboardFocusItem: filterTextField
 
     property variant currentLocale: null
     property int currentLocaleIndex: 0
@@ -54,10 +55,11 @@ BasePage {
             }
         };
 
-        service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setPreferencesSuccess, setPreferencesFailure);
+        service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setPreferencesSuccess(request), setPreferencesFailure);
 
-        function setPreferencesSuccess (message) {
+        function setPreferencesSuccess (request) {
             console.log("setPreferencesSuccess")
+            currentLocale = request.locale;
                 }
 
         function setPreferencesFailure (message) {
@@ -141,6 +143,7 @@ BasePage {
 
             function syncWithFilter() {
                 filteredLocaleModel.clear()
+                var index = -1;
                 for( var i = 0; i < localeModel.count; ++i ) {
                     var localeItem = localeModel.get(i);
                     var filterLowered = filter.toLowerCase();
@@ -148,10 +151,15 @@ BasePage {
                         localeItem.languageName.toLowerCase().indexOf(filterLowered) >= 0 )
                     {
                         filteredLocaleModel.append(localeItem);
+                        if ( (currentLocale.languageCode === localeItem.languageCode)
+                           &&(currentLocale.countryCode === localeItem.countryCode) )
+                        {
+                            index = filteredLocaleModel.count - 1;
+                        }
                     }
                 }
-                localeList.currentIndex = currentLocaleIndex
-                localeList.positionViewAtIndex(currentLocaleIndex, ListView.Center)
+                localeList.currentIndex = index
+                localeList.positionViewAtIndex(index, ListView.Center)
             }
         }
 

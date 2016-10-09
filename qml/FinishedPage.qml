@@ -34,6 +34,11 @@ BasePage {
                 usePrivateBus: true
             }
 
+    Component {
+        id: websiteDisplayPage
+        WebsiteDisplayPage { }
+    }
+
     Column {
         id: column
         anchors.fill: content
@@ -54,7 +59,12 @@ BasePage {
             wrapMode: Text.Wrap
             text: "If you find any bugs please report them on <a href=\"http://issues.webos-ports.org\">issues.webos-ports.org</a> or if you want to support the development of LuneOS have a look at our Wiki <a href=\"http://webos-ports.org\">webos-ports.org</a>."
             color: "white"
+            linkColor: "red"
             font.pixelSize: FontUtils.sizeToPixels("medium")
+            onLinkActivated: {
+                console.log("Link activated: " + link);
+                pageStack.push({ item: websiteDisplayPage, properties: { url: link, title: link, titleSize: FontUtils.sizeToPixels("large") }});
+            }
         }
 
         Item {
