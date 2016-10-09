@@ -37,41 +37,31 @@ BasePage {
         usePrivateBus: true
     }
 
-    Timer {
-        id: autoscanTimer
-        repeat: true
-        running: true
-        triggeredOnStart: true
-        interval: 1000
-        onTriggered: {
-            service.call("luna://com.palm.wifi/findnetworks","{}",findNetworksSuccess, findNetworksFailure);
-
-            function findNetworksSuccess (message) {
-                        console.log("findNetworksSuccess");
-                        var response = JSON.parse(message.payload);
-                        networksModel.clear();
-                        if (response.foundNetworks && response.foundNetworks.length > 0) {
-                            for (var n = 0; n < response.foundNetworks.length; n++) {
-                                var network = response.foundNetworks[n];
-                                // console.log("Adding network " + network);
-                                networksModel.append(network);
-                                if (network.networkInfo.connectState !== undefined &&
-                                    network.networkInfo.connectState === "ipConfigured")
-                                    stackButtonText = "Next";
-                            }
-                        }
-                    }
-
-            function findNetworksFailure (message) {
-                         console.log("findNetworksFailure response: " + message.payload);
-                    }
+    function findNetworksSuccess (message) {
+        console.log("findNetworksSuccess");
+        var response = JSON.parse(message.payload);
+        networksModel.clear();
+        if (response.foundNetworks && response.foundNetworks.length > 0) {
+            for (var n = 0; n < response.foundNetworks.length; n++) {
+                var network = response.foundNetworks[n];
+                // console.log("Adding network " + network);
+                networksModel.append(network);
+                if (network.networkInfo.connectState !== undefined &&
+                    network.networkInfo.connectState === "ipConfigured")
+                    stackButtonText = "Next";
+            }
         }
+    }
+
+    function findNetworksFailure (message) {
+        console.log("findNetworksFailure response: " + message.payload);
     }
 
     Component.onCompleted: {
         // enable WiFi by default
         service.call("luna://com.palm.wifi/setstate", JSON.stringify({"state":"enabled"}), setStateSuccess, setStateFailure);
         service.call("luna://com.palm.wan/set", JSON.stringify({"disablewan":"off"}), setDisableWanSuccess, setDisableWanFailure)
+        service.subscribe("luna://com.palm.wifi/findnetworks",'{"subscribe":true}',findNetworksSuccess, findNetworksFailure);
 
         function setStateSuccess(message)
         {

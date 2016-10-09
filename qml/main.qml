@@ -21,8 +21,9 @@ import QtQuick.Window 2.0
 import QtQuick.Controls 1.0
 import LunaNext.Common 0.1
 import LuneOS.Service 1.0
+import LuneOS.Application 1.0
 
-Window {
+LuneOSWindow {
     id: window
 
     width: Settings.displayWidth
@@ -54,6 +55,7 @@ Window {
             console.log("Failed to get deviceInfo: " + message.payload);
         }
 
+        window.show()
         window.visible = true;
     }
 
@@ -69,12 +71,19 @@ Window {
         id: pageStack
         anchors.fill: parent
 
-        initialItem: Qt.resolvedUrl(buildPagePath(currentPage))
+        initialItem: Qt.resolvedUrl(buildPagePath(0))
+        property var pageItemList: [initialItem]
 
         function next() {
             if (currentPage < pageList.length - 1)
                 currentPage += 1;
-            pageStack.push(Qt.resolvedUrl(buildPagePath(currentPage)));
+            if (currentPage > pageItemList.length - 1) {
+                var page = pageStack.push({ item: Qt.resolvedUrl(buildPagePath(currentPage)), destroyOnPop: false });
+                pageItemList.push(page);
+            }
+            else {
+                pageStack.push(pageItemList[currentPage]);
+            }
         }
 
         function back() {

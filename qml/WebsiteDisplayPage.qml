@@ -19,6 +19,7 @@
 import QtQuick 2.0
 import QtQuick.Controls 1.0
 import LuneOS.Components 1.0
+import LunaNext.Common 0.1
 
 BasePage {
     id: page
@@ -31,6 +32,18 @@ BasePage {
         id: webEngineView
         url: page.url
         anchors.fill: content
+
+        ProgressBar {
+            id: progressBar
+            anchors.left: parent.left
+            anchors.right: parent.right
+            anchors.top: parent.top
+            height: Units.gu(0.5)
+            maximumValue: 100
+            value: webEngineView.loadProgress
+            visible: webEngineView.loading
+            z: 1
+        }
     }
 
     onBackClicked: {
