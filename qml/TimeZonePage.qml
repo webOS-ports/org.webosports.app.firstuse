@@ -202,11 +202,10 @@ BasePage {
         if (response.region.countryCode !== undefined) {
             currentRegionCountry = response.region.countryCode.toUpperCase()
         }
-/*
+
         if (response.timeZone !== undefined) {
             currentTimezone = response.timeZone
         }
-*/
 
         //currently stored timeFormat
         if (response.timeFormat !== undefined) {
@@ -273,7 +272,7 @@ BasePage {
                 "preferred": true
             }
         }
-        service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setPreferencesSuccess(request), setPreferencesFailure)
+        service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), function () {setPreferencesSuccess(request);}, setPreferencesFailure)
 
     }
 
@@ -315,7 +314,8 @@ BasePage {
                         timezoneItem.timezoneCity.toLowerCase().indexOf(filterLowered) >= 0 )
                 {
                     filteredTimezoneModel.append(timezoneItem);
-                    if ( (currentTimezone.City === timezoneItem.timezoneCity)
+                    if ( currentTimezone
+                       &&(currentTimezone.City === timezoneItem.timezoneCity)
                        &&(currentTimezone.Description === timezoneItem.timezoneDescription)
                        &&(currentTimezone.CountryCode === timezoneItem.timezoneCountryCode) )
                     {

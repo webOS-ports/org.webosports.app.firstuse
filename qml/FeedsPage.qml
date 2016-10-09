@@ -275,7 +275,7 @@ BasePage {
                         enabled: enabled
                     }
 
-                    service.call("luna://org.webosinternals.ipkgservice/setConfigState", JSON.stringify(params), setConfigSuccess(params),
+                    service.call("luna://org.webosinternals.ipkgservice/setConfigState", JSON.stringify(params), function () {setConfigSuccess(params);},
                                        setConfigFailure)
                 }
 

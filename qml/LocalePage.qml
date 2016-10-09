@@ -55,7 +55,7 @@ BasePage {
             }
         };
 
-        service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setPreferencesSuccess(request), setPreferencesFailure);
+        service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), function () {setPreferencesSuccess(request);}, setPreferencesFailure);
 
         function setPreferencesSuccess (request) {
             console.log("setPreferencesSuccess")
