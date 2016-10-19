@@ -27,6 +27,7 @@ import "js/GlobalState.js" as GlobalState
 BasePage {
     title: "Select your Country"
     forwardButtonSourceComponent: forwardButton
+    keyboardFocusItem: filterTextField
 
     property variant currentRegion: null
     property int currentRegionIndex: -1
@@ -106,11 +107,12 @@ BasePage {
             }
         }
 
-        service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), setPreferencesSuccess, setPreferencesFailure);
+        service.call("luna://com.palm.systemservice/setPreferences", JSON.stringify(request), function () {setPreferencesSuccess(request);}, setPreferencesFailure);
 
-        function setPreferencesSuccess (message) {
+        function setPreferencesSuccess (request) {
             console.log("setPreferencesSuccess")
-                }
+            currentRegion = request.region;
+        }
 
         function setPreferencesFailure (message) {
             console.log("setPreferencesFailure")
@@ -130,6 +132,7 @@ BasePage {
 
         function syncWithFilter() {
             filteredCountryModel.clear()
+            var index = -1;
             for( var i = 0; i < countryModel.count; ++i ) {
                 var countryItem = countryModel.get(i);
 				var filterLowered = filter.toLowerCase();
@@ -138,10 +141,15 @@ BasePage {
                     countryItem.countryCode.toLowerCase().indexOf(filterLowered) >= 0 )
                 {
                     filteredCountryModel.append(countryItem);
+                    if ( (currentRegion.countryName === countryItem.countryName)
+                       &&(currentRegion.countryCode === countryItem.countryCode) )
+                    {
+                        index = filteredCountryModel.count - 1;
+                    }
                 }
             }
-            countryList.currentIndex = currentRegionIndex
-            countryList.positionViewAtIndex(currentRegionIndex, ListView.Center)
+            countryList.currentIndex = index
+            countryList.positionViewAtIndex(index, ListView.Center)
         }
     }
 	

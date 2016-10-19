@@ -94,9 +94,10 @@ BasePage {
                 id: termsLabel
                 width: column.width
                 wrapMode: Text.WordWrap
-                textFormat: TextEdit.RichText
+                textFormat: Text.StyledText
                 font.pixelSize: FontUtils.sizeToPixels("medium")
                 color: "white"
+                linkColor: "red"
                 onLinkActivated: {
                     console.log("Link activated: " + link);
                     pageStack.push({ item: websiteDisplayPage, properties: { url: link, title: link, titleSize: FontUtils.sizeToPixels("large") }});

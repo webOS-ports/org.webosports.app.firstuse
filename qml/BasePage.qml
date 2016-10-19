@@ -42,9 +42,27 @@ Item {
     property alias titleSize: titleLabel.font.pixelSize
     property bool needGlow: false
 
+    property Item keyboardFocusItem
+
     signal backClicked()
 
     visible: false
+    enabled: Stack.status === Stack.Active
+
+    MouseArea {
+        anchors.fill: parent
+        enabled: keyboardFocusItem && keyboardFocusItem.activeFocus === true
+        z: 1
+
+        onPressed: {
+            var cont = keyboardFocusItem.contains(mapToItem(keyboardFocusItem, mouse.x, mouse.y));
+            if (!cont) {
+                Qt.inputMethod.hide();
+                keyboardFocusItem.focus = false;
+            }
+            mouse.accepted = false;
+        }
+    }
 
     Image {
         id: background
@@ -97,7 +115,7 @@ Item {
         }
         z: 1
         text: "Back"
-        visible: pageStack.depth > 1 && hasBackButton && (parent.Stack.status === Stack.Activating || parent.Stack.status === Stack.Active)
+        visible: pageStack.depth > 1 && hasBackButton
         backArrow: true
 
         onClicked: customBack ? backClicked() : pageStack.back()
