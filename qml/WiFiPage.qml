@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
  * Copyright (C) 2014-2015 Herman van Hazendonk <github.com@herrie.org>
+ * Copyright (C) 2016 Christophe Chapuis <chris.chapuis@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,9 +17,10 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import QtQuick 2.0
-import QtQuick.Controls 1.0
+import QtQuick 2.6
+import QtQuick.Controls 2.0
 import QtQuick.Layouts 1.0
+
 import LuneOS.Service 1.0
 import LunaNext.Common 0.1
 import firstuse 1.0
@@ -27,9 +29,7 @@ BasePage {
     id: page
 
     title: "Connect WiFi network"
-    forwardButtonSourceComponent: forwardButton
-
-    property string stackButtonText: "Skip"
+    forwardButtonText: "Skip"
 
     LunaService {
         id: service
@@ -48,7 +48,7 @@ BasePage {
                 networksModel.append(network);
                 if (network.networkInfo.connectState !== undefined &&
                     network.networkInfo.connectState === "ipConfigured")
-                    stackButtonText = "Next";
+                    page.forwardButtonText = "Next";
             }
         }
     }
@@ -126,7 +126,7 @@ BasePage {
         anchors.fill: content
         spacing: Units.gu(1)
 
-        Text {
+        Label {
             id: label
             anchors.left: parent.left
             anchors.right: parent.right
@@ -286,16 +286,6 @@ BasePage {
                         }
                     }
                 }
-            }
-        }
-    }
-
-    Component {
-        id: forwardButton
-        StackButton {
-            text: stackButtonText
-            onClicked: {
-                pageStack.next();
             }
         }
     }

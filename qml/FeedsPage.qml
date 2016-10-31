@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2015-2016 Herman van Hazendonk <github.com@herrie.org>
+ * Copyright (C) 2016 Christophe Chapuis <chris.chapuis@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,51 +16,52 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import QtQuick 2.0
-import QtQuick.Controls 1.4
-import QtQuick.Controls.Styles 1.4
+import QtQuick 2.6
+import QtQuick.Controls 2.0
+
+import QtQuick.Controls.LuneOSStyle 2.0
 import LunaNext.Common 0.1
 import LuneOS.Service 1.0
 
 BasePage {
+    id: feedsPage
+
     title: "Preware Feeds"
-    forwardButtonSourceComponent: forwardButton
+    forwardButtonText: "Continue"
     property bool acceptedWarning: false
 
     Rectangle {
-        id: overlayRect
-        color: "#000000"
-        opacity: 0.9
+        id: dimmRect
         anchors.fill: parent
-        visible: false
         z: 1
+        color: "black"
+        opacity: 0.4
+        visible: overlayRect.visible
+    }
 
-        property Item originDelegate
+    Popup {
+        id: overlayRect
+        focus: true
+        dim: true
+        x: (feedsPage.width - width)/2
+        y: (feedsPage.height - height)/2
 
-        function show(delegate) {
-            overlayRect.originDelegate = delegate;
-            overlayRect.visible=true;
+        property var _callback
+        function show(callback) {
+            overlayRect._callback = callback;
+            overlayRect.open();
         }
 
-        MouseArea {
-            anchors.fill: parent
-        }
+        Column {
+            id: contentColumn
+            width: feedsPage.content.width * 0.8
+            spacing: Units.gu(1)
 
-        Rectangle {
-            id: messageRect
-            width: window.width * 0.8 
-            radius: Units.gu(0.8)
-            color: "#4c4c4c"
-            anchors.centerIn: parent
-            height: title.height + body.contentHeight + Units.gu(8)
-            z: 2
             Text {
                 id: title
                 text: "Non-webos-ports Feed"
                 font.bold: true
-                color: "white"
-                anchors.top: parent.top
-                anchors.topMargin: Units.gu(1)
+                color: "#343434"
                 anchors.left: parent.left
                 anchors.leftMargin: Units.gu(1)
                 font.pixelSize: FontUtils.sizeToPixels("16pt")
@@ -69,55 +71,43 @@ BasePage {
             Text {
                 id: body
                 text: "<p>By adding a non-webos-ports feed, you're trusting both the package developers and feed maintainer, and that their sites haven't been hacked.</p><br><p>You take full responsibility for any and all potential outcomes that may occur as a result of doing so, including (but not limited to): loss of warranty, loss of all data, loss of all privacy, security vulnerabilities and device damage.</p>"
-                color: "white"
-                anchors.top: title.bottom
-                anchors.topMargin: Units.gu(1)
+                color: "#343434"
                 anchors.left: parent.left
                 anchors.leftMargin: Units.gu(1)
+                anchors.right: parent.right
+                anchors.rightMargin: Units.gu(1)
                 font.pixelSize: FontUtils.sizeToPixels("16pt")
                 font.family: "Prelude"
                 wrapMode: Text.WordWrap
-                width: parent.width - Units.gu(2)
             }
 
-
-
-            StackButton {
-                id: okButton
+            Row {
+                spacing: Units.gu(2)
+                Button {
                     text: "OK"
-                    width: messageRect.width / 2 - Units.gu(1)
-                    anchors {
-                        left: parent.left
-                        bottom: parent.bottom
-                        leftMargin: Units.gu(1)
-                        bottomMargin: Units.gu(1)
-                    }
+                    LuneOSButton.mainColor: LuneOSButton.affirmativeColor
+
+                    width: contentColumn.width / 2 - Units.gu(2)
                     onClicked: {
                         acceptedWarning = true
-                        if(overlayRect.originDelegate)
+                        if(overlayRect._callback)
                         {
-                            overlayRect.originDelegate.warningAccepted()
+                            overlayRect._callback()
                         }
-                        overlayRect.visible = false
+                        overlayRect.close();
                     }
                 }
 
 
-            StackButton {
-                id: backButton
-                width: messageRect.width / 2 - Units.gu(1)
-                anchors {
-                    right: parent.right
-                    bottom: parent.bottom
-                    rightMargin: Units.gu(1)
-                    bottomMargin: Units.gu(1)
-                }
-                text: "Cancel"
-                backArrow: true
+                Button {
+                    text: "Cancel"
+                    LuneOSButton.mainColor: LuneOSButton.negativeColor
 
-                onClicked:
-                {
-                    overlayRect.visible = false
+                    width: contentColumn.width / 2 - Units.gu(2)
+                    onClicked:
+                    {
+                        overlayRect.close();
+                    }
                 }
             }
         }
@@ -189,12 +179,12 @@ BasePage {
             model: feedModel
 
             delegate: Rectangle {
+                id: delegate
 
                 function warningAccepted() {
                     setFeedStatus (configConfig, !configEnabled);
                 }
 
-                id: delegate
                 anchors.right: parent.right
                 anchors.left: parent.left
                 height: Units.gu(6)
@@ -209,59 +199,28 @@ BasePage {
                     font.bold: true
                 }
 
-                Text {
-                    id: configContents
-                    anchors.top: config.bottom
-                    color: "white"
-                    font.pixelSize: FontUtils.sizeToPixels("11pt")
-                    text: configURL
-                }
-
                 Switch {
                     id: feedToggle
-                    anchors.right: parent.right
                     checked: configEnabled
-                    style: SwitchStyle {
-                        groove: Image {
-                            id: grooveImage
-                            source: feedToggle.checked ? "images/toggle-button-on.png" : "images/toggle-button-off.png"
-                            width: Units.gu(8)
-                            height: Units.gu(4)
 
-                            Text {
-                                color: "white"
-                                text: "ON"
-                                font.bold: true
-                                font.family: "Prelude"
-                                font.pixelSize: FontUtils.sizeToPixels("small")
-                                visible: feedToggle.checked
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.left: parent.left
-                                anchors.leftMargin: Units.gu(1.25)
-                            }
-                            Text {
-                                color: "white"
-                                text: "OFF"
-                                font.bold: true
-                                font.family: "Prelude"
-                                font.pixelSize: FontUtils.sizeToPixels("small")
-                                visible: !feedToggle.checked
-                                anchors.verticalCenter: parent.verticalCenter
-                                anchors.right: parent.right
-                                anchors.rightMargin: Units.gu(1)
-                            }
+                    LayoutMirroring.enabled: true
+                    text: configURL
 
-                        }
-                        handle: Rectangle {
-                            color: "transparent"
-                        }
-                    }
+                    font.pixelSize: FontUtils.sizeToPixels("11pt")
+                    LuneOSSwitch.textColor: "white"
+
+                    anchors.top: config.bottom
+                    anchors.left: parent.left  // mirrored layout
+
+                    LuneOSSwitch.labelOn: "on"
+                    LuneOSSwitch.labelOff: "off"
+
                     onClicked:
                     {
                         //revert check
                         checked = Qt.binding( function () { return configEnabled; } );
                         if (configConfig !== "webos-ports.conf" && !acceptedWarning) {
-                            overlayRect.show(delegate)
+                            overlayRect.show(delegate.warningAccepted)
                         } else {
                             setFeedStatus (configConfig, !configEnabled)
                         }
@@ -299,16 +258,6 @@ BasePage {
         Item { // spacer
             height: Units.gu(2)
             width: Units.gu(1) // needed else it will be ignored
-        }
-    }
-
-    Component {
-        id: forwardButton
-        StackButton {
-            text: "Continue"
-            onClicked: {
-                pageStack.next();
-            }
         }
     }
 }

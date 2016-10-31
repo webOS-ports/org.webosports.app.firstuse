@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 Canonical, Ltd.
+ * Copyright (C) 2016 Christophe Chapuis <chris.chapuis@gmail.com>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -14,8 +15,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-import QtQuick 2.1
-import QtQuick.Controls 1.0
+import QtQuick 2.6
+import QtQuick.Controls 2.0
+import QtQuick.Controls.LuneOSStyle 2.0
 import LunaNext.Common 0.1
 
 Item {
@@ -35,7 +37,8 @@ Item {
     property bool noTitle: false
     property bool hasBackButton: true
     property bool customBack: false
-    property alias forwardButtonSourceComponent: forwardButton.sourceComponent
+    property alias forwardButtonText: forwardButton.text
+    property alias forwardButtonVisible: forwardButton.visible
     property alias content: contentHolder
 
     property string title: ""
@@ -45,9 +48,10 @@ Item {
     property Item keyboardFocusItem
 
     signal backClicked()
+    signal forwardClicked()
 
     visible: false
-    enabled: Stack.status === Stack.Active
+    enabled: StackView.status === StackView.Active
 
     MouseArea {
         anchors.fill: parent
@@ -73,7 +77,7 @@ Item {
 
     // We want larger than even fontSize: "x-large", so we use a Text instead
     // of a Label.
-    Text {
+    Label {
         id: titleLabel
         anchors {
             top: parent.top
@@ -104,7 +108,7 @@ Item {
         }
     }
 
-    StackButton {
+    Button {
         id: backButton
         width: buttonWidth
         anchors {
@@ -116,12 +120,12 @@ Item {
         z: 1
         text: "Back"
         visible: pageStack.depth > 1 && hasBackButton
-        backArrow: true
+        LuneOSButton.mainColor: LuneOSButton.grayColor
 
         onClicked: customBack ? backClicked() : pageStack.back()
     }
 
-    Loader {
+    Button {
         id: forwardButton
         width: buttonWidth
         anchors {
@@ -131,5 +135,12 @@ Item {
             bottomMargin: buttonMargin
         }
         z: 1
+
+        onClicked: {
+            forwardClicked();
+            pageStack.next();
+        }
+
+        LuneOSButton.mainColor: LuneOSButton.blueColor
     }
 }

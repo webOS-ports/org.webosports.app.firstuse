@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
  * Copyright (C) 2016 Herman van Hazendonk <github.com@herrie.org>
+ * Copyright (C) 2016 Christophe Chapuis <chris.chapuis@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,12 +17,13 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import QtQuick 2.0
-import QtQuick.Window 2.0
-import QtQuick.Controls 1.0
+import QtQuick 2.6
+import QtQuick.Controls 2.0
+
 import LunaNext.Common 0.1
 import LuneOS.Service 1.0
 import LuneOS.Application 1.0
+import firstuse 1.0
 
 LuneOSWindow {
     id: window
@@ -30,7 +32,6 @@ LuneOSWindow {
     height: Settings.displayHeight
 
     property variant pageList: [ "Welcome", "Locale", "Country", "TimeZone", "WiFi", "Feeds", "LicenseAgreement", "Finished" ]
-    property int currentPage: 0
 
     LunaService {
         id: service
@@ -72,23 +73,40 @@ LuneOSWindow {
         anchors.fill: parent
 
         initialItem: Qt.resolvedUrl(buildPagePath(0))
-        property var pageItemList: [initialItem]
+        property var _pageItemList: [] // memorize instances of pages
+        property int _currentPage: 0
+
+        Component.onCompleted: {
+            pageStack._pageItemList.push(pageStack.initialItem);
+        }
 
         function next() {
-            if (currentPage < pageList.length - 1)
-                currentPage += 1;
-            if (currentPage > pageItemList.length - 1) {
-                var page = pageStack.push({ item: Qt.resolvedUrl(buildPagePath(currentPage)), destroyOnPop: false });
-                pageItemList.push(page);
-            }
-            else {
-                pageStack.push(pageItemList[currentPage]);
+            if (_currentPage < pageList.length - 1)
+            {
+                _currentPage += 1;
+                if (_currentPage > _pageItemList.length - 1) {
+                    var pageComp = Qt.createComponent( Qt.resolvedUrl(buildPagePath(_currentPage)) );
+
+                    if (pageComp.status === Component.Error) {
+                        // Error Handling
+                        console.log("Error loading component:", pageComp.errorString());
+                    }
+                    var page = pageComp.createObject(pageStack);
+                    pageStack.push(page);
+                    _pageItemList.push(page);
+                }
+                else {
+                    pageStack.push(_pageItemList[_currentPage]);
+                }
+            } else {
+                FirstUseUtils.markFirstUseDone();
+                window.finish();
             }
         }
 
         function back() {
-            if (currentPage > 0)
-                currentPage -= 1;
+            if (_currentPage > 0)
+                _currentPage -= 1;
             pageStack.pop();
         }
     }

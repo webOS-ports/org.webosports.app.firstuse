@@ -1,6 +1,7 @@
 /*
 * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
 * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
+* Copyright (C) 2016 Christophe Chapuis <chris.chapuis@gmail.com>
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -15,10 +16,9 @@
 *You should have received a copy of the GNU General Public License
 * along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
-import QtQuick 2.0
-import QtQuick.Controls 1.0
-import QtQuick.Layouts 1.0
-import QtQuick.Controls.Styles 1.4
+import QtQuick 2.6
+import QtQuick.Controls 2.0
+
 import LunaNext.Common 0.1
 import LuneOS.Service 1.0
 import firstuse 1.0
@@ -26,7 +26,7 @@ import "js/GlobalState.js" as GlobalState
 
 BasePage {
     title: "Select your Country"
-    forwardButtonSourceComponent: forwardButton
+    forwardButtonText: "Next"
     keyboardFocusItem: filterTextField
 
     property variant currentRegion: null
@@ -163,12 +163,8 @@ BasePage {
             placeholderText: "Filter list..."
             height: Units.gu(4)
             font.pixelSize: Units.gu(36/13.5)
+            topPadding: 0; bottomPadding: 0
             width: parent.width * 0.95
-            style: TextFieldStyle {
-                background: Rectangle {
-                    radius: 5
-                }
-            }
         }
 
         ListView {
@@ -197,16 +193,6 @@ BasePage {
                     countryList.currentIndex = index
                     applySelectedRegion(countryCode, countryName)
                 }
-            }
-        }
-    }
-
-    Component {
-        id: forwardButton
-        StackButton {
-            text: "Next"
-            onClicked: {
-                pageStack.next()
             }
         }
     }

@@ -1,6 +1,7 @@
 /*
 * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
 * Copyright (C) 2015-2016 Herman van Hazendonk <github.com@herrie.org>
+* Copyright (C) 2016 Christophe Chapuis <chris.chapuis@gmail.com>
 *
 * This program is free software: you can redistribute it and/or modify
 * it under the terms of the GNU General Public License as published by
@@ -16,11 +17,10 @@
 * along with this program.  If not, see <http://www.gnu.org/licenses/>
 */
 
-import QtQuick 2.3
-import QtQuick.Controls 1.4
-import QtQuick.Layouts 1.0
+import QtQuick 2.6
+import QtQuick.Controls 2.0
 
-import QtQuick.Controls.Styles 1.4
+import QtQuick.Controls.LuneOSStyle 2.0
 import LunaNext.Common 0.1
 import LuneOS.Service 1.0
 import firstuse 1.0
@@ -31,7 +31,7 @@ import "js/GlobalState.js" as GlobalState
 BasePage {
     id: root
     title: "Select your Timezone"
-    forwardButtonSourceComponent: forwardButton
+    forwardButtonText: "Next"
     keyboardFocusItem: filterTextField
 
     property variant currentTimezone: null
@@ -64,7 +64,7 @@ BasePage {
                            getPreferencesFailure)
     }
 
-    Stack.onStatusChanged: tzUpdated();
+    StackView.onStatusChanged: tzUpdated();
 
     function fetchAvailableTimezonesSuccess (message) {
                 var response = JSON.parse(message.payload)
@@ -336,75 +336,25 @@ BasePage {
         anchors.fill: content
         spacing: Units.gu(2)
 
-        Row {
-            id: timeFormatRow
-            width: parent.width
-            Column{
-                anchors.verticalCenter: timeFormatRow.verticalCenter
-                width: parent.width - Units.gu(8)
-                Text {
-                    id: timeFormatText
-                    text: "Time Format"
-                    font.pixelSize: Units.gu(36/13.5)
-                    color: "white"
-                    anchors.left: parent.left
-                    width: parent.width - Units.gu(8)
-                }
-            }
-            Column
+        Switch {
+            id: timeFormatSwitch
+            LayoutMirroring.enabled: true
+            text: "Time Format"
+
+            LuneOSSwitch.textColor: "white"
+
+            checked: currentTimeFormat === "HH12" ? false : true
+            anchors.left: parent.left
+
+            LuneOSSwitch.labelOn: "24H"
+            LuneOSSwitch.labelOff: "12H"
+
+            onClicked:
             {
-                anchors.verticalCenter: timeFormatRow.verticalCenter
-                Switch
-                {
-                    id: timeFormatSwitch
-                    anchors.right: parent.right
-                    checked: currentTimeFormat === "HH12" ? false : true
-                    style: SwitchStyle {
-                        groove: Image
-                        {
-                        id: grooveImage
-                        source: timeFormatSwitch.checked ? "images/toggle-button-on.png" : "images/toggle-button-off.png"
-                        width: Units.gu(8)
-                        height: Units.gu(4)
-
-                        Text
-                        {
-                            color: "white"
-                            text: "24H"
-                            font.bold: true
-                            font.family: "Prelude"
-                            font.pixelSize: FontUtils.sizeToPixels("small")
-                            visible: timeFormatSwitch.checked
-                            anchors.verticalCenter: parent.verticalCenter
-                            anchors.left: parent.left
-                            anchors.leftMargin: Units.gu(1)
-                        }
-                        Text
-                        {
-                            color: "white"
-                            text: "12H"
-                            font.bold: true
-                            font.family: "Prelude"
-                            font.pixelSize: FontUtils.sizeToPixels("small")
-                            visible: !timeFormatSwitch.checked
-                            anchors.verticalCenter: parent.verticalCenter
-                            anchors.right: parent.right
-                            anchors.rightMargin: Units.gu(1)
-                        }
-
-                    }
-                    handle: Rectangle {
-                        color: "transparent"
-                    }
-                }
-                onClicked:
-                {
-                    timeFormat = timeFormatSwitch.checked ? "HH24" : "HH12"
-                    applySelectedTimeFormat(timeFormat)
-                }
+                timeFormat = timeFormatSwitch.checked ? "HH24" : "HH12"
+                applySelectedTimeFormat(timeFormat)
             }
         }
-    }
 
         TextField {
             id: filterTextField
@@ -412,18 +362,14 @@ BasePage {
             height: Units.gu(4)
             font.pixelSize: Units.gu(36/13.5)
             width: parent.width
-            style: TextFieldStyle {
-                background: Rectangle {
-                    radius: 5
-                }
-            }
+            topPadding: 0; bottomPadding: 0
         }
 
         ListView {
             id: timezoneList
             anchors.left: parent.left
             anchors.right: parent.right
-            height: column.height - column.spacing - filterTextField.height - timeFormatRow.height - column.spacing
+            height: column.height - column.spacing - filterTextField.height - timeFormatSwitch.height - column.spacing
             snapMode: ListView.SnapToItem	
 
             clip: true
@@ -551,16 +497,6 @@ BasePage {
         interval: 1000
         onTriggered: root.tzUpdated();
         repeat: true
-        running: parent.Stack.status === Stack.Active
-    }
-
-    Component {
-        id: forwardButton
-        StackButton {
-            text: "Next"
-            onClicked: {
-                pageStack.next()
-            }
-        }
+        running: parent.StackView.status === StackView.Active
     }
 }
