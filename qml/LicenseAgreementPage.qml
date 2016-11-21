@@ -97,7 +97,7 @@ BasePage {
                 textFormat: Text.StyledText
                 font.pixelSize: FontUtils.sizeToPixels("medium")
                 color: "white"
-                linkColor: "red"
+                linkColor: "#4db2ff"
                 onLinkActivated: {
                     console.log("Link activated: " + link);
                     pageStack.push({ item: websiteDisplayPage, properties: { url: link, title: link, titleSize: FontUtils.sizeToPixels("large") }});
