@@ -37,6 +37,7 @@ Item {
     property bool noTitle: false
     property bool hasBackButton: true
     property bool customBack: false
+    property bool customForward: false
     property alias forwardButtonText: forwardButton.text
     property alias forwardButtonVisible: forwardButton.visible
     property alias content: contentHolder
@@ -138,7 +139,7 @@ Item {
 
         onClicked: {
             forwardClicked();
-            pageStack.next();
+            if(!customForward) pageStack.next();
         }
 
         LuneOSButton.mainColor: LuneOSButton.blueColor

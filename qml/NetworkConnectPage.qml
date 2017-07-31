@@ -31,7 +31,8 @@ BasePage {
 
     title: "Connect to " + ssid
     customBack: true
-    forwardButtonSourceComponent: forwardButton
+    customForward: true
+    forwardButtonText: "Connect"
 
     LunaService {
         id: service
@@ -202,16 +203,12 @@ BasePage {
         pageStack.pop();
     }
 
-    Component {
-        id: forwardButton
-        StackButton {
-            text: "Connect"
-            onClicked: page.connectNetwork()
-        }
-    }
-
     onBackClicked: {
         // go back to page which push us to the stack
-        pageStack.pop()
+        pageStack.pop();
+    }
+
+    onForwardClicked: {
+        page.connectNetwork();
     }
 }
