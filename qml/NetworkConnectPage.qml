@@ -16,9 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import QtQuick 2.0
-import QtQuick.Controls 1.4
-import QtQuick.Controls.Styles 1.4
+import QtQuick 2.6
+import QtQuick.Controls 2.0
+
 import LuneOS.Service 1.0
 import LunaNext.Common 0.1
 import firstuse 1.0
@@ -104,13 +104,6 @@ BasePage {
                     else
                         Qt.inputMethod.hide();
                 }
-                style: TextFieldStyle {
-                    passwordCharacter: "•"
-                    background: Rectangle {
-                        radius: 5
-                    }
-
-                }
             }
 
             Text {
@@ -125,21 +118,6 @@ BasePage {
                 id: showPassphrase
                 checked: false
                 text: "Show passphrase"
-                style: CheckBoxStyle {
-                    indicator: Image
-                    {
-                        source: control.checked ? "images/checkbox-checked.png" : "images/checkbox-unchecked.png"
-                        height: Units.gu(2.4)
-                        width: Units.gu(2.4)
-                    }
-
-                    spacing: Units.gu(0.5)
-                    label: Text {
-                        color: "white"
-                        font.pixelSize: FontUtils.sizeToPixels("medium")
-                        text: control.text
-                    }
-                }
             }
         }
     }

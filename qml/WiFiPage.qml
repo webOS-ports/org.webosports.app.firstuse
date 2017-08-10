@@ -206,11 +206,11 @@ BasePage {
                     else if (networkInfo.availableSecurityTypes.indexOf("psk") !== -1 ||
                              networkInfo.availableSecurityTypes.indexOf("wep") !== -1) {
                         console.log("Connecting with network " + networkInfo.ssid);
-                        pageStack.push({ item: networkConnectPage, properties: { ssid: networkInfo.ssid, securityTypes: networkInfo.availableSecurityTypes }});
+                        pageStack.push(networkConnectPage, { ssid: networkInfo.ssid, securityTypes: networkInfo.availableSecurityTypes });
                     }
                     else if (networkInfo.availableSecurityTypes.indexOf("ieee8021x") !== -1) {
                         console.log("Connecting with enterprise security ... WIP!");
-                        pageStack.push({ item: networkConnectPage, properties: { ssid: networkInfo.ssid, securityTypes: networkInfo.availableSecurityTypes }});
+                        pageStack.push(networkConnectPage, { ssid: networkInfo.ssid, securityTypes: networkInfo.availableSecurityTypes });
                     }
                     else if (networkInfo.availableSecurityTypes.indexOf("wps") !== -1) {
                         console.log("Connecting with WPS ... NOT SUPPORTED YET!");
