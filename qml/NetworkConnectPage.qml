@@ -47,9 +47,9 @@ BasePage {
             anchors.fill: parent
             onPressed: {
                 mouse.accepted = false;
-                var selectedItem = root.childAt(mouse.x, mouse.y);
+                var selectedItem = column.childAt(mouse.x, mouse.y);
                 if (!selectedItem)
-                    selectedItem = root;
+                    selectedItem = column;
                 selectedItem.focus = true;
             }
         }
