@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
+ * Copyright (C) 2016 Christophe Chapuis <chris.chapuis@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,10 +16,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import QtQuick 2.0
-import QtQuick.Controls 1.0
-import QtQuick.Layouts 1.0
-import QtQuick.Controls.Styles 1.4
+import QtQuick 2.6
+import QtQuick.Controls 2.0
+
 import LuneOS.Service 1.0
 import LunaNext.Common 0.1
 import firstuse 1.0
@@ -27,7 +27,7 @@ BasePage {
     id: localePage
 
     title: "Select your Language"
-    forwardButtonSourceComponent: forwardButton
+    forwardButtonText: "Next"
     keyboardFocusItem: filterTextField
 
     property variant currentLocale: null
@@ -173,12 +173,9 @@ BasePage {
             placeholderText: "Filter list..."
             height: Units.gu(4)
             font.pixelSize: Units.gu(36/13.5)
+            bottomPadding: 0
+            topPadding: 0
             width: parent.width * 0.95
-            style: TextFieldStyle {
-                background: Rectangle {
-                    radius: 5
-                }
-            }
         }
 		
         ListView {
@@ -206,16 +203,6 @@ BasePage {
                     localeList.currentIndex = index;
                     applySelectedLocale(languageCode, countryCode, countryName);
                 }
-            }
-        }
-    }
-
-    Component {
-        id: forwardButton
-        StackButton {
-            text: "Next"
-            onClicked: {
-                pageStack.next();
             }
         }
     }

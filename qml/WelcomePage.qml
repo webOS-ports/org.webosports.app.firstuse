@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
+ * Copyright (C) 2016 Christophe Chapuis <chris.chapuis@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,13 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import QtQuick 2.0
-import QtQuick.Controls 1.0
+import QtQuick 2.6
+import QtQuick.Controls 2.0
+
 import LunaNext.Common 0.1
 
 BasePage {
     noTitle: true
-    forwardButtonSourceComponent: forwardButton
+    forwardButtonText: "Continue"
 
     Column {
         id: column
@@ -37,7 +39,7 @@ BasePage {
             layer.mipmap: true
         }
 
-        Text {
+        Label {
             id: label1
             anchors.left: parent.left
             anchors.right: parent.right
@@ -47,7 +49,7 @@ BasePage {
             font.pixelSize: FontUtils.sizeToPixels("medium")
         }
 
-        Text {
+        Label {
             id: label2
             anchors.left: parent.left
             anchors.right: parent.right
@@ -60,16 +62,6 @@ BasePage {
         Item { // spacer
             height: Units.gu(2)
             width: Units.gu(1) // needed else it will be ignored
-        }
-    }
-
-    Component {
-        id: forwardButton
-        StackButton {
-            text: "Continue"
-            onClicked: {
-                pageStack.next();
-            }
         }
     }
 }

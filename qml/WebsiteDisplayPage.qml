@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
  * Copyright (C) 2015 Herman van Hazendonk <github.com@herrie.org>
+ * Copyright (C) 2016 Christophe Chapuis <chris.chapuis@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,8 +17,9 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import QtQuick 2.0
-import QtQuick.Controls 1.0
+import QtQuick 2.6
+import QtQuick.Controls 2.0
+
 import LuneOS.Components 1.0
 import LunaNext.Common 0.1
 
@@ -26,6 +28,7 @@ BasePage {
 
     property string url: ""
 
+    forwardButtonVisible: false
     customBack: true
 
     LunaWebEngineView {
@@ -39,7 +42,8 @@ BasePage {
             anchors.right: parent.right
             anchors.top: parent.top
             height: Units.gu(0.5)
-            maximumValue: 100
+            from: 0
+            to: 100
             value: webEngineView.loadProgress
             visible: webEngineView.loading
             z: 1

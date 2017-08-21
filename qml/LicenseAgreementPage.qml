@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
+ * Copyright (C) 2016 Christophe Chapuis <chris.chapuis@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -16,14 +17,13 @@
  */
 
 import QtQuick 2.0
-import QtQuick.Controls 1.0
-import QtQuick.Controls.Styles 1.0
+import QtQuick.Controls 2.0
+
 import LunaNext.Common 0.1
-import "."
 
 BasePage {
     title: "License Agreement"
-    forwardButtonSourceComponent: forwardButton
+    forwardButtonText: "Accept"
 
     Component.onCompleted: loadFileContent()
 
@@ -100,18 +100,8 @@ BasePage {
                 linkColor: "#4db2ff"
                 onLinkActivated: {
                     console.log("Link activated: " + link);
-                    pageStack.push({ item: websiteDisplayPage, properties: { url: link, title: link, titleSize: FontUtils.sizeToPixels("large") }});
+                    pageStack.push(websiteDisplayPage, { url: link, title: link, titleSize: FontUtils.sizeToPixels("large") });
                 }
-            }
-        }
-    }
-
-    Component {
-        id: forwardButton
-        StackButton {
-            text: "Accept"
-            onClicked: {
-                pageStack.next();
             }
         }
     }

@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
+ * Copyright (C) 2016 Christophe Chapuis <chris.chapuis@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -15,17 +16,14 @@
  * along with this program.  If not, see <http://www.gnu.org/licenses/>
  */
 
-import QtQuick 2.0
-import QtQuick.Controls 1.0
+import QtQuick 2.6
+
 import LunaNext.Common 0.1
 import LuneOS.Service 1.0
-import firstuse 1.0
-
-
 
 BasePage {
     title: "Everything setup!"
-    forwardButtonSourceComponent: forwardButton
+    forwardButtonText: "Done!"
     hasBackButton: false
 
     LunaService {
@@ -63,7 +61,7 @@ BasePage {
             font.pixelSize: FontUtils.sizeToPixels("medium")
             onLinkActivated: {
                 console.log("Link activated: " + link);
-                pageStack.push({ item: websiteDisplayPage, properties: { url: link, title: link, titleSize: FontUtils.sizeToPixels("large") }});
+                pageStack.push(websiteDisplayPage, { url: link, title: link, titleSize: FontUtils.sizeToPixels("large") });
             }
         }
 
@@ -82,17 +80,5 @@ BasePage {
             font.pixelSize: FontUtils.sizeToPixels("medium")
         }
 
-    }
-
-    Component {
-        id: forwardButton
-        StackButton {
-            text: "Done!"
-            onClicked: {
-                FirstUseUtils.markFirstUseDone();
-                window.finish();
-                //service.call("luna://com.palm.power/shutdown/machineReboot", JSON.stringify({"reason":"Reboot request by User"}), null, null)
-            }
-        }
     }
 }
