@@ -198,19 +198,21 @@ BasePage {
                     text: configConfig.substring(0, configConfig.length-5)
                     font.bold: true
                 }
+                Text {
+                    anchors.top: config.bottom
+                    color: "white"
+                    font.pixelSize: FontUtils.sizeToPixels("11pt")
+                    text: configURL
+                }
 
                 Switch {
                     id: feedToggle
                     checked: configEnabled
 
-                    LayoutMirroring.enabled: true
-                    text: configURL
+                    text: ""
 
-                    font.pixelSize: FontUtils.sizeToPixels("11pt")
-                    LuneOSSwitch.textColor: "white"
-
-                    anchors.top: config.bottom
-                    anchors.left: parent.left  // mirrored layout
+                    anchors.right: parent.right
+                    anchors.verticalCenter: parent.verticalCenter
 
                     LuneOSSwitch.labelOn: "on"
                     LuneOSSwitch.labelOff: "off"
