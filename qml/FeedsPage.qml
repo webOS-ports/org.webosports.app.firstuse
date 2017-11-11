@@ -43,6 +43,8 @@ BasePage {
         id: overlayRect
         focus: true
         dim: true
+        modal: true
+        closePolicy: Popup.NoAutoClose
         x: (feedsPage.width - width)/2
         y: (feedsPage.height - height)/2
 
