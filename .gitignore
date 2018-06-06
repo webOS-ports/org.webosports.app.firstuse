@@ -1,2 +1,5 @@
 deploy
 build
+*.qmlproject.user
+*.jsc
+*.qmlc
