@@ -23,6 +23,7 @@ import QtQuick.Layouts 1.0
 
 import LuneOS.Service 1.0
 import LunaNext.Common 0.1
+import Connman 0.2
 import firstuse 1.0
 
 BasePage {
@@ -121,10 +122,27 @@ BasePage {
         dynamicRoles: true
     }
 
+    //We only want to show the wifi page on devices that have acually wifi available.
+    TechnologyModel {
+        id: wifiModel
+        name: "wifi"
+    }
+    Label {
+        id: labelNoWifi
+        visible: !wifiModel.powered
+        anchors.fill: content
+        color: "white"
+        text: "No WiFi support!"
+        font.pixelSize: Units.gu(3)
+        Layout.fillHeight: false
+        Layout.preferredHeight: labelNoWifi.contentHeight
+    }
+
     ColumnLayout {
         id: column
         anchors.fill: content
         spacing: Units.gu(1)
+        visible: wifiModel.powered
 
         Label {
             id: label
