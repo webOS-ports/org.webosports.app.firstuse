@@ -146,11 +146,10 @@ BasePage {
 
         Label {
             id: label
-            anchors.left: parent.left
-            anchors.right: parent.right
             color: "white"
             text: "Select network you want to connect to"
             font.pixelSize: FontUtils.sizeToPixels("medium")
+            Layout.fillWidth: true
             Layout.fillHeight: false
             Layout.preferredHeight: label.contentHeight
         }
@@ -163,8 +162,7 @@ BasePage {
         ListView {
             id: networkList
 
-            anchors.left: parent.left
-            anchors.right: parent.right
+            Layout.fillWidth: true
             Layout.fillHeight: true
             clip: true
 
