@@ -123,7 +123,7 @@ BasePage {
     }
 
     Component.onCompleted: {
-        service.call("luna://org.webosinternals.ipkgservice/getConfigs", JSON.stringify({}), getFeedsSuccess,
+        service.call("luna://org.webosports.service.ipkg/getConfigs", JSON.stringify({}), getFeedsSuccess,
                            getFeedsFailure)
     }
 
@@ -238,7 +238,7 @@ BasePage {
                         enabled: enabled
                     }
 
-                    service.call("luna://org.webosinternals.ipkgservice/setConfigState", JSON.stringify(params), function () {setConfigSuccess(params);},
+                    service.call("luna://org.webosports.service.ipkg/setConfigState", JSON.stringify(params), function () {setConfigSuccess(params);},
                                        setConfigFailure)
                 }
 
