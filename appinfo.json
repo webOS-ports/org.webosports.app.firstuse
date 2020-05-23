@@ -5,6 +5,7 @@
 	"title": "First Use",
 	"uiRevision": 2,
 	"visible": "false",
-    "useLuneOSStyle": "true",
-	"loadingAnimationDisabled": true
+	"useLuneOSStyle": "true",
+	"loadingAnimationDisabled": true,
+	"requiredPermissions": ["networking", "networking.query", "networking.internal", "settings", "applications.internal"]
 }
