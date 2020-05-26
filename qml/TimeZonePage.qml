@@ -451,7 +451,7 @@ BasePage {
 
                     Connections {
                         target: root
-                        onTzUpdated: {
+                        function onTzUpdated() {
                             var adjustedTime =  new Date();
                             adjustedTime.setUTCMinutes(adjustedTime.getUTCMinutes() + timezoneDSTCorrection + timezoneOffsetFromUTC + adjustedTime.getTimezoneOffset());
                             tzTime.text = " | " + Qt.formatTime(adjustedTime, timeFormat === "HH24"? "hh:mm": "h:mm AP");
