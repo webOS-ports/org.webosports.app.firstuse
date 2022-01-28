@@ -47,7 +47,7 @@ LuneOSWindow {
 
         function gotDeviceInfoSuccess(message) {
             var response = JSON.parse(message.payload)
-            if(response.device_name==="qemux86"){
+            if(response.device_name.substring(0,7)==="qemux86"){
                 pageList = [ "Welcome", "Locale", "Country", "TimeZone", "Feeds", "LicenseAgreement", "Finished" ];
             }
         }
