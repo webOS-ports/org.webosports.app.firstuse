@@ -20,11 +20,14 @@ import QtQuick 2.6
 
 import LunaNext.Common 0.1
 import LuneOS.Service 1.0
+import QtQuick.Controls 2.0
+import QtQuick.Controls.LuneOS 2.0
 
 BasePage {
     title: "Everything setup!"
     forwardButtonText: "Done!"
-    hasBackButton: false
+
+    signal accountsButtonClicked()
 
     LunaService {
                 id: service
@@ -55,7 +58,7 @@ BasePage {
             anchors.left: parent.left
             anchors.right: parent.right
             wrapMode: Text.Wrap
-            text: "If you find any bugs please report them on <a href=\"http://issues.webos-ports.org\">issues.webos-ports.org</a> or if you want to support the development of LuneOS have a look at our Wiki <a href=\"http://webos-ports.org\">webos-ports.org</a>."
+            text: "If you find any bugs please report them on <a href=\"https://github.com/webos-ports/luneos-testing/issues\">https://github.com/webos-ports/luneos-testing/issues</a> or if you want to support the development of LuneOS have a look at our Wiki <a href=\"http://webos-ports.org\">webos-ports.org</a>."
             color: "white"
             linkColor: "#4db2ff"
             font.pixelSize: FontUtils.sizeToPixels("medium")
@@ -68,6 +71,28 @@ BasePage {
         Item {
             anchors.left: parent.left
             anchors.right: parent.right
+            height: Units.gu(2)
+        }
+
+        Text {
+            anchors.left: parent.left
+            anchors.right: parent.right
+            wrapMode: Text.Wrap
+            text: "You can add (email/im/contacts) accounts right away"
+            color: "white"
+            font.pixelSize: FontUtils.sizeToPixels("medium")
+        }
+
+        Button {
+            id: accountsButton
+            width: buttonWidth
+            text: "Add accounts"
+            onClicked: accountsButtonClicked()
+        }
+
+        Item {
+            anchors.left: parent.left
+            anchors.right: parent.right
             height: Units.gu(5)
         }
 
@@ -75,10 +100,24 @@ BasePage {
             anchors.left: parent.left
             anchors.right: parent.right
             wrapMode: Text.Wrap
-            text: "You can now start using your device. Enjoy it!"
+            text: "Or you can now start using your device right away and add accounts later. Enjoy it!"
             color: "white"
             font.pixelSize: FontUtils.sizeToPixels("medium")
         }
-
     }
+
+    onAccountsButtonClicked: {
+            console.log("Launching Accounts app");
+            service.call("luna://com.palm.applicationManager/launch",
+                JSON.stringify({"id": "com.palm.app.accounts", "params":""}), successCB, handleLaunchAppError);
+        }
+
+    function handleLaunchAppError(message) {
+            console.log("Could not start application com.palm.app.accounts: " + message);
+    }
+
+    function successCB(message) {
+            console.log("Successfully started application com.palm.app.accounts: " + message);
+    }
+
 }
