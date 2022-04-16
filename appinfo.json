@@ -2,10 +2,11 @@
 	"id": "org.webosports.app.firstuse",
 	"type": "qml",
 	"main": "qml/main.qml",
+	"icon": "",
 	"title": "First Use",
 	"uiRevision": 2,
-	"visible": "false",
-	"useLuneOSStyle": "true",
+	"visible": false,
+	"useLuneOSStyle": true,
 	"loadingAnimationDisabled": true,
 	"requiredPermissions": ["networking", "networking.query", "networking.internal", "settings", "applications.internal"]
 }
