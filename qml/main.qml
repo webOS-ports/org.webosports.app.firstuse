@@ -24,7 +24,6 @@ import Eos.Window 0.1
 
 import LunaNext.Common 0.1
 import LuneOS.Service 1.0
-import LuneOS.Application 1.0
 import firstuse 1.0
 
 WebOSWindow {
