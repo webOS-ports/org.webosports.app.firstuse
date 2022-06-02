@@ -73,11 +73,11 @@ WebOSWindow {
         id: pageStack
         anchors.fill: parent
 
-        initialItem: Qt.resolvedUrl(buildPagePath(0))
         property var _pageItemList: [] // memorize instances of pages
         property int _currentPage: 0
 
         Component.onCompleted: {
+            pageStack.push(Qt.resolvedUrl(buildPagePath(0)));
             pageStack._pageItemList.push(pageStack.initialItem);
         }
 
