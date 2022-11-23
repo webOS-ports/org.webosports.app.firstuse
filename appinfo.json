@@ -7,6 +7,7 @@
 	"uiRevision": 2,
 	"visible": false,
 	"useLuneOSStyle": true,
+	"trustLevel": "trusted", 
 	"loadingAnimationDisabled": true,
-	"requiredPermissions": ["networking", "networking.query", "networking.internal", "settings", "applications.internal"]
+	"requiredPermissions": ["ipkg-service.operation", "networkconnection.query", "networkconnection.management", "systemsettings.management", "systemsettings.query", "telephony.query", "wifi.query", "wifi.management"]
 }
