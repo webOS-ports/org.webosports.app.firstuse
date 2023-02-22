@@ -20,12 +20,13 @@
 import QtQuick 2.6
 import QtQuick.Controls 2.0
 
+import Eos.Window 0.1
+
 import LunaNext.Common 0.1
 import LuneOS.Service 1.0
-import LuneOS.Application 1.0
 import firstuse 1.0
 
-LuneOSWindow {
+WebOSWindow {
     id: window
 
     width: Settings.displayWidth
@@ -72,11 +73,11 @@ LuneOSWindow {
         id: pageStack
         anchors.fill: parent
 
-        initialItem: Qt.resolvedUrl(buildPagePath(0))
         property var _pageItemList: [] // memorize instances of pages
         property int _currentPage: 0
 
         Component.onCompleted: {
+            pageStack.push(Qt.resolvedUrl(buildPagePath(0)));
             pageStack._pageItemList.push(pageStack.initialItem);
         }
 

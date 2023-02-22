@@ -35,11 +35,6 @@ BasePage {
                 usePrivateBus: true
             }
 
-    Component {
-        id: websiteDisplayPage
-        WebsiteDisplayPage { }
-    }
-
     Column {
         id: column
         anchors.fill: content
@@ -64,7 +59,8 @@ BasePage {
             font.pixelSize: FontUtils.sizeToPixels("medium")
             onLinkActivated: {
                 console.log("Link activated: " + link);
-                pageStack.push(websiteDisplayPage, { url: link, title: link, titleSize: FontUtils.sizeToPixels("large") });
+                // Just do a LS2 call to open the link in the browser
+                service.call("luna://com.palm.applicationManager/open", JSON.stringify({"target": link}));
             }
         }
 

@@ -19,6 +19,7 @@
 import QtQuick 2.0
 import QtQuick.Controls 2.0
 
+import LuneOS.Service 1.0
 import LunaNext.Common 0.1
 
 BasePage {
@@ -26,6 +27,12 @@ BasePage {
     forwardButtonText: "Accept"
 
     Component.onCompleted: loadFileContent()
+
+    LunaService {
+                id: service
+                name: "org.webosports.app.firstuse"
+                usePrivateBus: true
+            }
 
     function loadFileContent() {
         var xhr = new XMLHttpRequest
@@ -55,11 +62,6 @@ BasePage {
         }
         xhr.send()
 
-    }
-
-    Component {
-        id: websiteDisplayPage
-        WebsiteDisplayPage { }
     }
 
 
@@ -100,7 +102,8 @@ BasePage {
                 linkColor: "#4db2ff"
                 onLinkActivated: {
                     console.log("Link activated: " + link);
-                    pageStack.push(websiteDisplayPage, { url: link, title: link, titleSize: FontUtils.sizeToPixels("large") });
+                    // Just do a LS2 call to open the link in the browser
+                    service.call("luna://com.palm.applicationManager/open", JSON.stringify({"target": link}));
                 }
             }
         }
