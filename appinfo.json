@@ -9,5 +9,5 @@
 	"useLuneOSStyle": true,
 	"trustLevel": "trusted", 
 	"loadingAnimationDisabled": true,
-	"requiredPermissions": ["ipkg-service.operation", "networkconnection.query", "networkconnection.management", "systemsettings.management", "systemsettings.query", "telephony.query", "wifi.query", "wifi.management"]
+	"requiredPermissions": ["ipkg-service.operation", "networkconnection.query", "networkconnection.management", "systemsettings.management", "systemsettings.query", "telephony.query", "telephony.management", "wifi.query", "wifi.management"]
 }
