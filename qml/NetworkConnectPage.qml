@@ -151,6 +151,7 @@ BasePage {
             service.call("luna://com.palm.wifi/connect",JSON.stringify({
                 ssid: page.ssid,
                 security: {
+                    securityType: "psk",
                     enterpriseSecurity: {
                         identityEAP: username.text,
                         passKey: passphrase.text
@@ -163,6 +164,7 @@ BasePage {
             service.call("luna://com.palm.wifi/connect",JSON.stringify({
                 ssid: page.ssid,
                 security: {
+                    securityType: "psk",
                     simpleSecurity: {
                         passKey: passphrase.text
                    }
