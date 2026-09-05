@@ -1,6 +1,6 @@
-project(org.webosports.app.firstuse CXX)
+cmake_minimum_required(VERSION 3.16)
 
-cmake_minimum_required(VERSION 2.8.8)
+project(org.webosports.app.firstuse CXX)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
@@ -11,12 +11,10 @@ webos_component(0 3 0)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden -Wall -std=c++1z")
 
-find_package(Qt6 COMPONENTS Qml Quick REQUIRED)
+find_package(Qt6 COMPONENTS Qml Quick)
 if (NOT Qt6_FOUND)
-    find_package(Qt5 5.15 REQUIRED Qml Quick)
+    find_package(Qt5 5.15 REQUIRED COMPONENTS Qml Quick)
 endif()
-
-find_package(Qt6 COMPONENTS Qml Quick REQUIRED)
 
 set(APP_DIR ${WEBOS_INSTALL_WEBOS_APPLICATIONSDIR}/org.webosports.app.firstuse)
 set(APP_DATA appinfo.json)

@@ -1,0 +1,18 @@
+# Qt macros (Q_OBJECT, qWarning, Q_ASSERT, ...) are provided by <QObject> /
+# <QtGlobal>; the qt*-internal headers include-cleaner suggests instead do not
+# exist in Qt 5, which this project still supports.
+Checks: >
+  clang-analyzer-*,
+  bugprone-*,
+  cert-*,
+  misc-*,
+  modernize-*,
+  performance-*,
+  readability-*,
+  -modernize-use-trailing-return-type,
+  -readability-identifier-length
+CheckOptions:
+  misc-include-cleaner.IgnoreHeaders: 'qtmetamacros\.h;qlogging\.h;qassert\.h;qglobal\.h'
+# Only the project's own header; keeps moc-generated code (…/firstuse_autogen/…)
+# out of the results.
+HeaderFilterRegex: '.*/plugin/plugin\.h$'

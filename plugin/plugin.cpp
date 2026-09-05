@@ -16,9 +16,15 @@
  */
 
 #include <QtQml/qqml.h>
-#include <QQmlContext>
 #include <QFile>
-#include <QDebug>
+#include <QIODevice>
+#include <QLatin1String>
+#include <QObject>
+#include <QString>
+#include <QtGlobal>
+
+#include <array>
+
 #include "plugin.h"
 
 class FirstUseUtils : public QObject
@@ -28,11 +34,12 @@ class FirstUseUtils : public QObject
 public:
     static FirstUseUtils* instance()
     {
-        static FirstUseUtils* instance = new FirstUseUtils;
+        static auto *instance = new FirstUseUtils;
         return instance;
     }
 
-    Q_INVOKABLE void markFirstUseDone()
+    // Not static: QML cannot call static Q_INVOKABLEs on all supported Qt versions.
+    Q_INVOKABLE void markFirstUseDone() // NOLINT(readability-convert-member-functions-to-static)
     {
         /*
          * Two sentinel filenames are in use across the system, and both have
@@ -52,26 +59,31 @@ public:
          * outgoing-sms.json - the db8 watch that drains the outgoing SMS
          * outbox - so sending an SMS never triggered anything.
          */
-        static const char * const markers[] = {
+        static const std::array<const char *, 2> markers = {
             "/var/luna/preferences/ran-first-use",
             "/var/luna/preferences/ran-firstuse",
         };
 
-        for (const char * const path : markers) {
+        for (const char *const path : markers) {
             QFile marker(QString::fromLatin1(path));
-            if (marker.open(QIODevice::ReadWrite))
+            if (marker.open(QIODevice::ReadWrite)) {
                 marker.close();
-            else
+            } else {
                 qWarning("firstuse: could not create %s: %s", path,
                          qPrintable(marker.errorString()));
+            }
         }
     }
 };
 
-static QObject *firstuseutils_callback(QQmlEngine*, QJSEngine*)
+namespace {
+
+QObject *firstuseutils_callback(QQmlEngine * /*engine*/, QJSEngine * /*scriptEngine*/)
 {
     return FirstUseUtils::instance();
 }
+
+} // namespace
 
 void FirstUsePlugin::registerTypes(const char *uri)
 {
