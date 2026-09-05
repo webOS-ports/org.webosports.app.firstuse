@@ -18,6 +18,7 @@
 #include <QtQml/qqml.h>
 #include <QQmlContext>
 #include <QFile>
+#include <QDebug>
 #include "plugin.h"
 
 class FirstUseUtils : public QObject
@@ -33,9 +34,37 @@ public:
 
     Q_INVOKABLE void markFirstUseDone()
     {
-        QFile firstUseMarker("/var/luna/preferences/ran-first-use");
-        firstUseMarker.open(QIODevice::ReadWrite);
-        firstUseMarker.close();
+        /*
+         * Two sentinel filenames are in use across the system, and both have
+         * to be written or the components disagree about whether first use
+         * has run:
+         *
+         *   ran-first-use  LunaSysMgr (SystemService::cbGetBootStatus),
+         *                  LunaAppManager, com.palm.service.accounts
+         *   ran-firstuse   configurator (ActivityConfigurator::FIRST_USE_FLAG),
+         *                  SettingsService, and webos_firstusesentinelfile in
+         *                  webos_filesystem_paths.bbclass
+         *
+         * Writing only the first left configurator permanently in "before
+         * first use" mode, in which it installs solely activities marked
+         * firstUseSafe. That silently skipped 14 of the 16 definitions under
+         * /etc/palm/activities, among them com.palm.telephony's
+         * outgoing-sms.json - the db8 watch that drains the outgoing SMS
+         * outbox - so sending an SMS never triggered anything.
+         */
+        static const char * const markers[] = {
+            "/var/luna/preferences/ran-first-use",
+            "/var/luna/preferences/ran-firstuse",
+        };
+
+        for (const char * const path : markers) {
+            QFile marker(QString::fromLatin1(path));
+            if (marker.open(QIODevice::ReadWrite))
+                marker.close();
+            else
+                qWarning("firstuse: could not create %s: %s", path,
+                         qPrintable(marker.errorString()));
+        }
     }
 };
 
