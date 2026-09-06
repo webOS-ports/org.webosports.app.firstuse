@@ -32,6 +32,11 @@ BasePage {
     property variant currentRegion: null
     property int currentRegionIndex: -1
 
+    //The mapper in LocalePage is out of scope here, we need our own instance
+    NetworkIdCountryMapper {
+        id: networkIdCountryMapper
+    }
+
     LunaService {
         id: service
         name: "org.webosports.app.firstuse"

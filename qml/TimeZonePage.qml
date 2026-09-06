@@ -57,41 +57,65 @@ BasePage {
         usePrivateBus: true
     }
 
-    Component.onCompleted: {
+    //The page instance is cached by main.qml, so refresh whenever it becomes active:
+    //the user may have gone back and selected a different country in the meantime.
+    StackView.onStatusChanged: {
+        if (root.StackView.status === StackView.Active) {
+            refresh();
+        }
+        tzUpdated();
+    }
+
+    function refresh() {
         service.call("luna://com.palm.systemservice/getPreferences", JSON.stringify({
                                               keys: ["region", "timeZone", "timeFormat", "locale"]
                                           }), getPreferencesSuccess,
                            getPreferencesFailure)
     }
 
-    StackView.onStatusChanged: tzUpdated();
-
     function fetchAvailableTimezonesSuccess (message) {
                 var response = JSON.parse(message.payload)
+
+                //Reset the selection state, the page can be shown again with a different country selected
+                currentTimezoneIndex = -1
+                currentTimezoneIndexPreferred = -1
+                currentTimezoneIndexPreferredOffset = -1
+                currentTimezoneIndexPreferredTemp = -1
+                currentDifference = -1
+                finalIndex = -1
+
+                //Without a SIM we have no MCC info, so the offset based logic can't be used
+                var hasMccOffset = GlobalState.mccOffsetFromUTC !== -1
+                var preferredIndexes = []
 
                 timezoneModel.clear()
                 if (response.timeZone && response.timeZone.length > 0) {
                     for (var n = 0; n < response.timeZone.length; n++) {
                         var timezone = response.timeZone[n]
+
+                        //luna-sysservice repacks the timezone list and delivers "supportDST" (OSE naming)
+                        //instead of "supportsDST", and drops fields that are empty. Undefined members
+                        //poison the ListModel roles, so make sure every member has a defined value.
+                        var supportsDST = timezone.supportsDST !== undefined ? timezone.supportsDST
+                                                                             : (timezone.supportDST !== undefined ? timezone.supportDST : 0)
+
                         if (currentRegionCountry === timezone.CountryCode) {
                             currentTimezoneIndex = n
                             //For countries with multiple timezones, we need to have the preferred one
                             if(timezone.preferred) {
+                                preferredIndexes.push(n)
                                 //Sometimes we have multiple preferred timezones per country, we need to make sure to pick the one with the right offset based on mcc
-                                if(timezone.offsetFromUTC === GlobalState.mccOffsetFromUTC) {
-                                    currentTimezoneIndexPreferredOffset = n
-                                }
-                                //Otherwise just use the zone with the shortest offset compared to current MCC
-                                else {
-                                    //Check if we already calculated a difference between a timezone and offset based on mcc
-                                    if(currentDifference == -1){
-                                        currentDifference = Math.abs(timezone.offsetFromUTC-GlobalState.mccOffsetFromUTC)
-                                        currentTimezoneIndexPreferredTemp = n
+                                if(hasMccOffset) {
+                                    if(timezone.offsetFromUTC === GlobalState.mccOffsetFromUTC) {
+                                        currentTimezoneIndexPreferredOffset = n
                                     }
-                                    //Check if the difference for the current timezone is less compared to the previous difference stored
-                                    else if((timezone.offsetFromUTC-GlobalState.mccOffsetFromUTC)< currentDifference){
-                                        currentDifference = Math.abs(timezone.offsetFromUTC-GlobalState.mccOffsetFromUTC)
-                                        currentTimezoneIndexPreferredTemp = n
+                                    //Otherwise just use the zone with the smallest offset difference compared to the current MCC
+                                    else {
+                                        var difference = Math.abs(timezone.offsetFromUTC-GlobalState.mccOffsetFromUTC)
+                                        if(currentDifference === -1 || difference < currentDifference){
+                                            currentDifference = difference
+                                            currentTimezoneIndexPreferredTemp = n
+                                        }
                                     }
                                 }
                             }
@@ -101,10 +125,10 @@ BasePage {
                         var utcTime = new Date()
 
                         //Check if DST is being applied currently
-                        var inDST = isDST(new Date()) && timezone.supportsDST
+                        var inDST = isDST(new Date()) && supportsDST
 
                         //In case DST is applied we need to adjust for 1 hr
-                        var dstCorrection = inDST ? timezone.supportsDST * 60 : 0
+                        var dstCorrection = inDST ? supportsDST * 60 : 0
 
                         //We need to correct for DST in the offset we receive from our timezone table
                         var dstDifferenceTemp = timezone.offsetFromUTC + dstCorrection
@@ -132,11 +156,11 @@ BasePage {
                         //Add each timezone to the model
 
                         timezoneModel.append({
-                                               timezoneCity: timezone.City,
-                                               timezoneDescription: timezone.Description,
-                                               timezoneCountryCode: timezone.CountryCode,
-                                               timezoneCountry: timezone.Country,
-                                               timezoneSupportsDST: timezone.supportsDST,
+                                               timezoneCity: timezone.City ? timezone.City : "",
+                                               timezoneDescription: timezone.Description ? timezone.Description : "",
+                                               timezoneCountryCode: timezone.CountryCode ? timezone.CountryCode : "",
+                                               timezoneCountry: timezone.Country ? timezone.Country : "",
+                                               timezoneSupportsDST: supportsDST,
                                                timezoneZoneID: timezone.ZoneID,
                                                timezoneOffsetFromUTC: timezone.offsetFromUTC,
                                                timezoneOffsetSign: timezone.offsetFromUTC.toString().substring(0,1) === "-" ? "-" : "+",
@@ -148,46 +172,48 @@ BasePage {
                                            })
                     }
 
-                    //This is a bit nasty but it will help us to find the right timezone and store it.
-                    var timezone2
-                    //Take the closest match based on both country, mcc offset
+                    //Without MCC info we can't tell which of the preferred zones is the right one,
+                    //take the middle one so we don't end up at the far edge of a large country
+                    if(preferredIndexes.length > 0) {
+                        currentTimezoneIndexPreferred = preferredIndexes[Math.floor(preferredIndexes.length / 2)]
+                    }
+
+                    //Take the closest match based on both country and mcc offset
                     if(currentTimezoneIndexPreferredOffset !== -1) {
-                        timezone2 = response.timeZone[currentTimezoneIndexPreferredOffset]
+                        finalIndex = currentTimezoneIndexPreferredOffset
                     }
                     //Otherwise find closest "preferred" based on mcc
                     else if(currentTimezoneIndexPreferredTemp !== -1) {
-                        timezone2 = response.timeZone[currentTimezoneIndexPreferredTemp]
+                        finalIndex = currentTimezoneIndexPreferredTemp
                     }
                     //Take any preferred that's available
                     else if(currentTimezoneIndexPreferred !== -1) {
-                        timezone2 = response.timeZone[currentTimezoneIndexPreferred]
+                        finalIndex = currentTimezoneIndexPreferred
                     }
                     //Otherwise just the country one (for countries with a single one)
                     else {
-                        timezone2 = response.timeZone[currentTimezoneIndex]
+                        finalIndex = currentTimezoneIndex
                     }
 
-                    //Make sure to save the settings right away.
-                    applySelectedTimezone(timezone2.City, timezone2.Description, timezone2.CountryCode, timezone2.Country, timezone2.supportsDST, timezone2.ZoneID, timezone2.offsetFromUTC, timezone2.preferred)
-                    applySelectedTimeFormat(timeFormat)
+                    if(finalIndex !== -1) {
+                        //Use the model entry so we get the normalized values from above
+                        var timezone2 = timezoneModel.get(finalIndex)
+
+                        //Update our local copy right away: syncWithFilter() below highlights the row matching
+                        //currentTimezone, and the setPreferences round trip only completes later
+                        currentTimezone = {
+                            "City": timezone2.timezoneCity,
+                            "Description": timezone2.timezoneDescription,
+                            "CountryCode": timezone2.timezoneCountryCode
+                        }
+
+                        //Make sure to save the settings right away.
+                        applySelectedTimezone(timezone2.timezoneCity, timezone2.timezoneDescription, timezone2.timezoneCountryCode, timezone2.timezoneCountry, timezone2.timezoneSupportsDST, timezone2.timezoneZoneID, timezone2.timezoneOffsetFromUTC, timezone2.timezonePreferred)
+                        applySelectedTimeFormat(timeFormat)
+                    }
                 }
 
                 //Make sure we select the right one in the list
-
-                //Take the preferred one with smallest offset, regular prefered one or other available one
-                if(currentTimezoneIndexPreferredOffset !== -1) {
-                    finalIndex = currentTimezoneIndexPreferredOffset;
-                } else if (currentTimezoneIndexPreferred !== -1) {
-                    finalIndex = currentTimezoneIndexPreferred
-                } else if (currentTimezoneIndexPreferredTemp !== -1) {
-                    finalIndex = currentTimezoneIndexPreferredTemp
-                } else {
-                    finalIndex = currentTimezoneIndex;
-                }
-
-                timezoneList.currentIndex = finalIndex
-                timezoneList.positionViewAtIndex(finalIndex, ListView.Center)
-
                 filteredTimezoneModel.syncWithFilter();
             }
     function fetchAvailableTimezonesFailure (message) {
@@ -199,7 +225,7 @@ BasePage {
 
         var response = JSON.parse(message.payload)
 
-        if (response.region.countryCode !== undefined) {
+        if (response.region !== undefined && response.region.countryCode !== undefined) {
             currentRegionCountry = response.region.countryCode.toUpperCase()
         }
 
@@ -211,10 +237,10 @@ BasePage {
         if (response.timeFormat !== undefined) {
             currentTimeFormat = response.timeFormat
         }
-        if (response.locale.countryCode !== undefined) {
+        if (response.locale !== undefined && response.locale.countryCode !== undefined) {
             currentLocaleCountry = response.locale.countryCode.toUpperCase()
         }
-        if (response.locale.languageCode !== undefined) {
+        if (response.locale !== undefined && response.locale.languageCode !== undefined) {
             currentLocaleLanguage = response.locale.languageCode
         }
 
