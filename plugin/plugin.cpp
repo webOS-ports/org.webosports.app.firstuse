@@ -23,8 +23,6 @@
 #include <QString>
 #include <QtGlobal>
 
-#include <array>
-
 #include "plugin.h"
 
 class FirstUseUtils : public QObject
@@ -42,36 +40,22 @@ public:
     Q_INVOKABLE void markFirstUseDone() // NOLINT(readability-convert-member-functions-to-static)
     {
         /*
-         * Two sentinel filenames are in use across the system, and both have
-         * to be written or the components disagree about whether first use
-         * has run:
-         *
-         *   ran-first-use  LunaSysMgr (SystemService::cbGetBootStatus),
-         *                  LunaAppManager, com.palm.service.accounts
-         *   ran-firstuse   configurator (ActivityConfigurator::FIRST_USE_FLAG),
-         *                  SettingsService, and webos_firstusesentinelfile in
-         *                  webos_filesystem_paths.bbclass
-         *
-         * Writing only the first left configurator permanently in "before
-         * first use" mode, in which it installs solely activities marked
-         * firstUseSafe. That silently skipped 14 of the 16 definitions under
-         * /etc/palm/activities, among them com.palm.telephony's
-         * outgoing-sms.json - the db8 watch that drains the outgoing SMS
-         * outbox - so sending an SMS never triggered anything.
+         * The one sentinel filename shared across the system: every reader -
+         * LunaAppManager (BootManager), com.palm.service.accounts
+         * (createLocalAccount), configurator
+         * (ActivityConfigurator::FIRST_USE_FLAG), SettingsService, and
+         * webos_firstusesentinelfile in webos_filesystem_paths.bbclass -
+         * checks "ran-firstuse". The legacy "ran-first-use" spelling (once
+         * read by LunaSysMgr's SystemService::cbGetBootStatus, LunaAppManager
+         * and com.palm.service.accounts) is no longer consulted anywhere.
          */
-        static const std::array<const char *, 2> markers = {
-            "/var/luna/preferences/ran-first-use",
-            "/var/luna/preferences/ran-firstuse",
-        };
-
-        for (const char *const path : markers) {
-            QFile marker(QString::fromLatin1(path));
-            if (marker.open(QIODevice::ReadWrite)) {
-                marker.close();
-            } else {
-                qWarning("firstuse: could not create %s: %s", path,
-                         qPrintable(marker.errorString()));
-            }
+        QFile marker(QStringLiteral("/var/luna/preferences/ran-firstuse"));
+        if (marker.open(QIODevice::ReadWrite)) {
+            marker.close();
+        } else {
+            qWarning("firstuse: could not create %s: %s",
+                     qPrintable(marker.fileName()),
+                     qPrintable(marker.errorString()));
         }
     }
 };
