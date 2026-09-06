@@ -92,6 +92,13 @@ BasePage {
                 if (response.timeZone && response.timeZone.length > 0) {
                     for (var n = 0; n < response.timeZone.length; n++) {
                         var timezone = response.timeZone[n]
+
+                        //luna-sysservice repacks the timezone list and delivers "supportDST" (OSE naming)
+                        //instead of "supportsDST", and drops fields that are empty. Undefined members
+                        //poison the ListModel roles, so make sure every member has a defined value.
+                        var supportsDST = timezone.supportsDST !== undefined ? timezone.supportsDST
+                                                                             : (timezone.supportDST !== undefined ? timezone.supportDST : 0)
+
                         if (currentRegionCountry === timezone.CountryCode) {
                             currentTimezoneIndex = n
                             //For countries with multiple timezones, we need to have the preferred one
@@ -118,10 +125,10 @@ BasePage {
                         var utcTime = new Date()
 
                         //Check if DST is being applied currently
-                        var inDST = isDST(new Date()) && timezone.supportsDST
+                        var inDST = isDST(new Date()) && supportsDST
 
                         //In case DST is applied we need to adjust for 1 hr
-                        var dstCorrection = inDST ? timezone.supportsDST * 60 : 0
+                        var dstCorrection = inDST ? supportsDST * 60 : 0
 
                         //We need to correct for DST in the offset we receive from our timezone table
                         var dstDifferenceTemp = timezone.offsetFromUTC + dstCorrection
@@ -149,11 +156,11 @@ BasePage {
                         //Add each timezone to the model
 
                         timezoneModel.append({
-                                               timezoneCity: timezone.City,
-                                               timezoneDescription: timezone.Description,
-                                               timezoneCountryCode: timezone.CountryCode,
-                                               timezoneCountry: timezone.Country,
-                                               timezoneSupportsDST: timezone.supportsDST,
+                                               timezoneCity: timezone.City ? timezone.City : "",
+                                               timezoneDescription: timezone.Description ? timezone.Description : "",
+                                               timezoneCountryCode: timezone.CountryCode ? timezone.CountryCode : "",
+                                               timezoneCountry: timezone.Country ? timezone.Country : "",
+                                               timezoneSupportsDST: supportsDST,
                                                timezoneZoneID: timezone.ZoneID,
                                                timezoneOffsetFromUTC: timezone.offsetFromUTC,
                                                timezoneOffsetSign: timezone.offsetFromUTC.toString().substring(0,1) === "-" ? "-" : "+",
@@ -189,14 +196,19 @@ BasePage {
                     }
 
                     if(finalIndex !== -1) {
-                        var timezone2 = response.timeZone[finalIndex]
+                        //Use the model entry so we get the normalized values from above
+                        var timezone2 = timezoneModel.get(finalIndex)
 
                         //Update our local copy right away: syncWithFilter() below highlights the row matching
                         //currentTimezone, and the setPreferences round trip only completes later
-                        currentTimezone = timezone2
+                        currentTimezone = {
+                            "City": timezone2.timezoneCity,
+                            "Description": timezone2.timezoneDescription,
+                            "CountryCode": timezone2.timezoneCountryCode
+                        }
 
                         //Make sure to save the settings right away.
-                        applySelectedTimezone(timezone2.City, timezone2.Description, timezone2.CountryCode, timezone2.Country, timezone2.supportsDST, timezone2.ZoneID, timezone2.offsetFromUTC, timezone2.preferred)
+                        applySelectedTimezone(timezone2.timezoneCity, timezone2.timezoneDescription, timezone2.timezoneCountryCode, timezone2.timezoneCountry, timezone2.timezoneSupportsDST, timezone2.timezoneZoneID, timezone2.timezoneOffsetFromUTC, timezone2.timezonePreferred)
                         applySelectedTimeFormat(timeFormat)
                     }
                 }
