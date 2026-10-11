@@ -332,9 +332,9 @@ BasePage {
         function syncWithFilter() {
             filteredTimezoneModel.clear()
             var index = -1;
+            var filterLowered = filter.toLowerCase();
             for( var i = 0; i < timezoneModel.count; ++i ) {
                 var timezoneItem = timezoneModel.get(i);
-                var filterLowered = filter.toLowerCase();
                 if( filterLowered.length === 0 ||
                         timezoneItem.timezoneCountry.toLowerCase().indexOf(filterLowered) >= 0 ||
                         timezoneItem.timezoneCity.toLowerCase().indexOf(filterLowered) >= 0 )
@@ -348,6 +348,19 @@ BasePage {
                         index = filteredTimezoneModel.count - 1;
                     }
                 }
+            }
+            // A search down to one zone picks it: there is nothing left to
+            // choose between, and Next would otherwise keep the old one
+            if (filterLowered.length > 0 && filteredTimezoneModel.count === 1) {
+                var only = filteredTimezoneModel.get(0);
+                index = 0;
+                if (!currentTimezone
+                        || currentTimezone.City !== only.timezoneCity
+                        || currentTimezone.Description !== only.timezoneDescription
+                        || currentTimezone.CountryCode !== only.timezoneCountryCode)
+                    applySelectedTimezone(only.timezoneCity, only.timezoneDescription, only.timezoneCountryCode,
+                                          only.timezoneCountry, only.timezoneSupportsDST, only.timezoneZoneID,
+                                          only.timezoneOffsetFromUTC, only.timezonePreferred)
             }
             timezoneList.currentIndex = index
             timezoneList.positionViewAtIndex(index, ListView.Center)
