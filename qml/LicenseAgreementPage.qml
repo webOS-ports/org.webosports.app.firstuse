@@ -19,7 +19,7 @@
 import QtQuick 2.0
 import QtQuick.Controls 2.0
 
-import LuneOS.Service 1.0
+import LuneOS.System 1.0
 import LunaNext.Common 0.1
 
 BasePage {
@@ -28,11 +28,10 @@ BasePage {
 
     Component.onCompleted: loadFileContent()
 
-    LunaService {
-                id: service
-                name: "org.webosports.app.firstuse"
-                usePrivateBus: true
-            }
+    AppLauncher {
+        id: launcher
+        clientName: "org.webosports.app.firstuse"
+    }
 
     function loadFileContent() {
         var xhr = new XMLHttpRequest
@@ -102,8 +101,7 @@ BasePage {
                 linkColor: "#4db2ff"
                 onLinkActivated: {
                     console.log("Link activated: " + link);
-                    // Just do a LS2 call to open the link in the browser
-                    service.call("luna://com.palm.applicationManager/open", JSON.stringify({"target": link}));
+                    launcher.open(link);
                 }
             }
         }
