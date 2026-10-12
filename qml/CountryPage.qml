@@ -138,9 +138,9 @@ BasePage {
         function syncWithFilter() {
             filteredCountryModel.clear()
             var index = -1;
+            var filterLowered = filter.toLowerCase();
             for( var i = 0; i < countryModel.count; ++i ) {
                 var countryItem = countryModel.get(i);
-				var filterLowered = filter.toLowerCase();
                 if( filterLowered.length === 0 ||
                     countryItem.countryName.toLowerCase().indexOf(filterLowered) >= 0 ||
                     countryItem.countryCode.toLowerCase().indexOf(filterLowered) >= 0 )
@@ -152,6 +152,14 @@ BasePage {
                         index = filteredCountryModel.count - 1;
                     }
                 }
+            }
+            // A search down to one country picks it: there is nothing left to
+            // choose between, and Next would otherwise keep the old one
+            if (filterLowered.length > 0 && filteredCountryModel.count === 1) {
+                var only = filteredCountryModel.get(0);
+                index = 0;
+                if (!currentRegion || currentRegion.countryCode !== only.countryCode)
+                    applySelectedRegion(only.countryCode, only.countryName);
             }
             countryList.currentIndex = index
             countryList.positionViewAtIndex(index, ListView.Center)

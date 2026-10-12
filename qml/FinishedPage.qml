@@ -19,7 +19,7 @@
 import QtQuick 2.6
 
 import LunaNext.Common 0.1
-import LuneOS.Service 1.0
+import LuneOS.System 1.0
 import QtQuick.Controls 2.0
 import QtQuick.Controls.LuneOS 2.0
 
@@ -29,11 +29,10 @@ BasePage {
 
     signal accountsButtonClicked()
 
-    LunaService {
-                id: service
-                name: "org.webosports.app.firstuse"
-                usePrivateBus: true
-            }
+    AppLauncher {
+        id: launcher
+        clientName: "org.webosports.app.firstuse"
+    }
 
     Column {
         id: column
@@ -59,8 +58,7 @@ BasePage {
             font.pixelSize: FontUtils.sizeToPixels("medium")
             onLinkActivated: {
                 console.log("Link activated: " + link);
-                // Just do a LS2 call to open the link in the browser
-                service.call("luna://com.palm.applicationManager/open", JSON.stringify({"target": link}));
+                launcher.open(link);
             }
         }
 
@@ -104,16 +102,15 @@ BasePage {
 
     onAccountsButtonClicked: {
             console.log("Launching Accounts app");
-            service.call("luna://com.palm.applicationManager/launch",
-                JSON.stringify({"id": "com.palm.app.accounts", "params":""}), successCB, handleLaunchAppError);
+            launcher.launch("com.palm.app.accounts", null, successCB, handleLaunchAppError);
         }
 
     function handleLaunchAppError(message) {
             console.log("Could not start application com.palm.app.accounts: " + message);
     }
 
-    function successCB(message) {
-            console.log("Successfully started application com.palm.app.accounts: " + message);
+    function successCB(response) {
+            console.log("Successfully started application com.palm.app.accounts");
     }
 
 }
