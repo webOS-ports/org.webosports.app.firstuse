@@ -19,7 +19,6 @@
 import QtQuick 2.6
 import QtQuick.Controls 2.0
 
-import LuneOS.Service 1.0
 import LunaNext.Common 0.1
 import firstuse 1.0
 
@@ -34,11 +33,9 @@ BasePage {
     customForward: true
     forwardButtonText: "Connect"
 
-    LunaService {
-        id: service
-        name: "org.webosports.app.firstuse"
-        usePrivateBus: true
-    }
+    // Carried out by the Wi-Fi page, which stays around for the answer: this
+    // page is gone by the time a wrong passphrase is refused.
+    signal connectRequested(var args)
 
     Item {
         anchors.fill: content
@@ -89,6 +86,7 @@ BasePage {
 
             TextField {
                 id: passphrase
+                objectName: "passphrase"
 
                 height: Units.gu(4)
 
@@ -148,7 +146,7 @@ BasePage {
 
         if(securityTypes.indexOf("ieee8021x") !== -1)
         {
-            service.call("luna://com.palm.wifi/connect",JSON.stringify({
+            page.connectRequested({
                 ssid: page.ssid,
                 security: {
                     securityType: "psk",
@@ -157,11 +155,11 @@ BasePage {
                         passKey: passphrase.text
                    }
                 }
-            }), networkConnectSuccess, networkConnectFailure)
+            });
         }
         else
         {
-            service.call("luna://com.palm.wifi/connect",JSON.stringify({
+            page.connectRequested({
                 ssid: page.ssid,
                 security: {
                     securityType: "psk",
@@ -169,16 +167,8 @@ BasePage {
                         passKey: passphrase.text
                    }
                 }
-            }), networkConnectSuccess, networkConnectFailure)
+            });
         }
-
-        function networkConnectSuccess(message) {
-                    console.log("networkConnectSuccess response: " + message.payload);
-        }
-        function networkConnectFailure(message) {
-                    console.log("networkConnectFailure response: " + message.payload);
-        }
-        ;
 
         pageStack.pop();
     }
