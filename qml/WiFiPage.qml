@@ -34,6 +34,7 @@ BasePage {
 
     LunaService {
         id: service
+        objectName: "wifiService"
         name: "org.webosports.app.firstuse"
         usePrivateBus: true
     }
@@ -93,6 +94,79 @@ BasePage {
         ;
     }
 
+    /*
+     * Ask the Wi-Fi service to connect. The answer only comes when the attempt
+     * has connected or failed, and a refused connect is otherwise as silent as
+     * it was in Settings: every tap does nothing while an earlier attempt is
+     * still held.
+     */
+    function connectNetwork(args) {
+        page.stopRequested = false;
+        service.call("luna://com.palm.wifi/connect", JSON.stringify(args),
+                     connectAnswered, connectCallFailed);
+    }
+
+    // The bus adapter hands every reply to the first callback, a refusal
+    // (returnValue false) as well.
+    function connectAnswered(message) {
+        var response = parseReply(message);
+        if (response.returnValue === true)
+            return;
+        console.log("connect refused: " + response.errorCode + " " + response.errorText);
+        connectFailed(response.errorCode, response.errorText);
+    }
+
+    // Only when the call could not be sent at all, with a plain string.
+    function connectCallFailed(errorMessage) {
+        console.log("connect call failed: " + errorMessage);
+        connectFailed(undefined, errorMessage);
+    }
+
+    function connectFailed(errorCode, errorText) {
+        // Stopping an attempt is answered as a failure of that attempt.
+        if (page.stopRequested) {
+            page.stopRequested = false;
+            return;
+        }
+        if (errorCode === connectProblemPopup.errorAlreadyConnecting) {
+            connectProblemPopup.showBusy(page.connectingSsid);
+            return;
+        }
+        var text = connectProblemPopup.failureText(errorCode, errorText);
+        if (text !== "")
+            connectProblemPopup.showFailure(page.connectingSsid, text);
+    }
+
+    function stopConnecting() {
+        page.stopRequested = true;
+        service.call("luna://com.palm.wifi/cancel", "{}", cancelAnswered, cancelCallFailed);
+    }
+
+    function cancelAnswered(message) {
+        var response = parseReply(message);
+        if (response.returnValue === true)
+            return;
+        cancelCallFailed(response.errorText);
+    }
+
+    function cancelCallFailed(errorMessage) {
+        console.log("cancel failed: " + errorMessage);
+        page.stopRequested = false;
+        connectProblemPopup.showFailure(page.connectingSsid, "Could not stop connecting"
+                                        + (errorMessage ? " (" + errorMessage + ")." : "."));
+    }
+
+    function parseReply(message) {
+        try {
+            var response = JSON.parse(message.payload);
+            if (response && typeof response === "object")
+                return response;
+        } catch (e) {
+            console.log("unreadable reply: " + e);
+        }
+        return { returnValue: false };
+    }
+
     function connectStateToStr(state) {
         switch (state) {
         case "associating":
@@ -115,6 +189,17 @@ BasePage {
         }
 
         return false;
+    }
+
+    // The network the last tap was about, for the popup.
+    property string connectingSsid: ""
+    // The user pressed "Stop connecting" and the attempt has not answered yet.
+    property bool stopRequested: false
+
+    WiFiConnectProblemPopup {
+        id: connectProblemPopup
+        objectName: "connectProblemPopup"
+        onStopConnecting: page.stopConnecting()
     }
 
     ListModel {
@@ -156,11 +241,16 @@ BasePage {
 
         Component {
             id: networkConnectPage
-            NetworkConnectPage { }
+            NetworkConnectPage {
+                onConnectRequested: function(args) {
+                    page.connectNetwork(args);
+                }
+            }
         }
 
         ListView {
             id: networkList
+            objectName: "wifiList"
 
             Layout.fillWidth: true
             Layout.fillHeight: true
@@ -202,22 +292,16 @@ BasePage {
                         networkInfo.connectState === "ipConfigured")
                         return;
 
-                    if (networkInfo.profileId !== undefined) {
+                    page.connectingSsid = networkInfo.ssid;
+
+                    if (isConnectingState(networkInfo.connectState)) {
+                        // Another connect would only be refused: offer to
+                        // stop this one instead.
+                        connectProblemPopup.showBusy(networkInfo.ssid);
+                    }
+                    else if (networkInfo.profileId !== undefined) {
                         console.log("Connecting with profile id " + networkInfo.profileId);
-                        service.call("luna://com.palm.wifi/connect", JSON.stringify({
-                            profileId: networkInfo.profileId
-                        }), connectNetworkSuccess, connectNetworkFailure )
-
-                        function connectNetworkSuccess (message)
-                        {
-                            console.log("connectNetworkSuccess response: " + message.payload);
-                        }
-
-                        function connectNetworkFailure (message)
-                        {
-                            console.log("connectNetworkFailure");
-                        }
-
+                        page.connectNetwork({ profileId: networkInfo.profileId });
                     }
                     else if (networkInfo.availableSecurityTypes.indexOf("psk") !== -1 ||
                              networkInfo.availableSecurityTypes.indexOf("wep") !== -1) {
@@ -235,18 +319,7 @@ BasePage {
                     /* no security types means we have an open network */
                     else if (networkInfo.availableSecurityTypes.length === 0) {
                         // we're connecting to an open network so just connect to it
-                        service.call("luna://com.palm.wifi/connect", JSON.stringify({
-                            ssid: networkInfo.ssid
-                        }), networkConnectSuccess, networkConnectFailure) 
-					}
-
-                    function networkConnectSuccess(message) {
-                                console.log("networkConnectSuccess response: " + message.payload);
-                    }
-
-                    function networkConnectFailure(message) {
-                                console.log("networkConnectFailure response: " + message.payload);
-                                networkList.setErrorMessage("Unable to connect to: "+networkInfo.ssid+", reason: "+message.payload.errorText);
+                        page.connectNetwork({ ssid: networkInfo.ssid });
                     }
                 }
 
