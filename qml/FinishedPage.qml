@@ -34,69 +34,82 @@ BasePage {
         clientName: "org.webosports.app.firstuse"
     }
 
-    Column {
-        id: column
+    // On a short screen (the Q25) the words and the accounts button do not
+    // all fit above the page's buttons: they scroll.
+    Flickable {
+        id: flick
+        objectName: "finishedFlick"
         anchors.fill: content
-        spacing: Units.gu(1)
+        contentWidth: width
+        contentHeight: column.height
+        clip: true
+        boundsBehavior: Flickable.StopAtBounds
+        ScrollIndicator.vertical: ScrollIndicator { }
 
-        Text {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            wrapMode: Text.Wrap
-            text: "Your device is now fully configured and ready to be used."
-            color: "white"
-            font.pixelSize: FontUtils.sizeToPixels("medium")
-        }
+        Column {
+            id: column
+            width: flick.width
+            spacing: Units.gu(1)
 
-        Text {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            wrapMode: Text.Wrap
-            text: "If you find any bugs please report them on <a href=\"https://github.com/webos-ports/luneos-testing/issues\">https://github.com/webos-ports/luneos-testing/issues</a> or if you want to support the development of LuneOS have a look at our Wiki <a href=\"http://webos-ports.org\">webos-ports.org</a>."
-            color: "white"
-            linkColor: "#4db2ff"
-            font.pixelSize: FontUtils.sizeToPixels("medium")
-            onLinkActivated: {
-                console.log("Link activated: " + link);
-                launcher.open(link);
+            Text {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                wrapMode: Text.Wrap
+                text: "Your device is now fully configured and ready to be used."
+                color: "white"
+                font.pixelSize: FontUtils.sizeToPixels("medium")
             }
-        }
 
-        Item {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            height: Units.gu(2)
-        }
+            Text {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                wrapMode: Text.Wrap
+                text: "If you find any bugs please report them on <a href=\"https://github.com/webos-ports/luneos-testing/issues\">https://github.com/webos-ports/luneos-testing/issues</a> or if you want to support the development of LuneOS have a look at our Wiki <a href=\"http://webos-ports.org\">webos-ports.org</a>."
+                color: "white"
+                linkColor: "#4db2ff"
+                font.pixelSize: FontUtils.sizeToPixels("medium")
+                onLinkActivated: {
+                    console.log("Link activated: " + link);
+                    launcher.open(link);
+                }
+            }
 
-        Text {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            wrapMode: Text.Wrap
-            text: "You can add (email/im/contacts) accounts right away"
-            color: "white"
-            font.pixelSize: FontUtils.sizeToPixels("medium")
-        }
+            Item {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: Units.gu(2)
+            }
 
-        Button {
-            id: accountsButton
-            width: buttonWidth
-            text: "Add accounts"
-            onClicked: accountsButtonClicked()
-        }
+            Text {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                wrapMode: Text.Wrap
+                text: "You can add (email/im/contacts) accounts right away"
+                color: "white"
+                font.pixelSize: FontUtils.sizeToPixels("medium")
+            }
 
-        Item {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            height: Units.gu(5)
-        }
+            Button {
+                id: accountsButton
+                width: buttonWidth
+                text: "Add accounts"
+                onClicked: accountsButtonClicked()
+            }
 
-        Text {
-            anchors.left: parent.left
-            anchors.right: parent.right
-            wrapMode: Text.Wrap
-            text: "Or you can now start using your device right away and add accounts later. Enjoy it!"
-            color: "white"
-            font.pixelSize: FontUtils.sizeToPixels("medium")
+            Item {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: Units.gu(5)
+            }
+
+            Text {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                wrapMode: Text.Wrap
+                text: "Or you can now start using your device right away and add accounts later. Enjoy it!"
+                color: "white"
+                font.pixelSize: FontUtils.sizeToPixels("medium")
+            }
         }
     }
 

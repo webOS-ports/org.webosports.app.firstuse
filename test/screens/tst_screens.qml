@@ -332,11 +332,26 @@ TestCase {
         p = next(p, "Accept");
         compare(p.title, "Everything setup!");
         verifyStep(p, "Done!");
-        verifyClearOfButtons(p, button(p, "Add accounts"), "Add accounts");
+        // A short screen scrolls the page's words: each is checked once
+        // scrolled into view, as a user would get to it.
+        var finishedFlick = findChild(p, "finishedFlick");
+        verify(finishedFlick !== null, "no scrolling for the finished page");
+        verifyClearOfButtons(p, finishedFlick, "the finished page's words");
+        var accounts = button(p, "Add accounts");
         var later = find(p, function(c) { return c instanceof Text && c.text.indexOf("Or you can now") === 0; });
         verify(later !== null);
-        verifyClearOfButtons(p, later, "the closing words");
         shot("11-finished");
+        [[accounts, "Add accounts"], [later, "the closing words"]].forEach(function(w) {
+            var top = w[0].mapToItem(finishedFlick.contentItem, 0, 0).y;
+            finishedFlick.contentY = Math.max(0, Math.min(top + w[0].height - finishedFlick.height,
+                                                          finishedFlick.contentHeight - finishedFlick.height));
+            var at = w[0].mapToItem(finishedFlick, 0, 0).y;
+            expect(at >= -1 && at + w[0].height <= finishedFlick.height + 1,
+                   w[1] + " cannot be scrolled into view: " + at + " in " + finishedFlick.height);
+        });
+        finishedFlick.contentY = finishedFlick.contentHeight - finishedFlick.height > 0
+                ? finishedFlick.contentHeight - finishedFlick.height : 0;
+        shot("11-finished-end");
 
         verify(allProblems.length === 0, allProblems.join("\n"));
     }
