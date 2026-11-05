@@ -70,20 +70,37 @@ BasePage {
                 font.family: "Prelude"
             }
 
-            Text {
-                id: body
-                text: "<p>By adding a non-webos-ports feed, you're trusting both the package developers and feed maintainer, and that their sites haven't been hacked.</p><br><p>You take full responsibility for any and all potential outcomes that may occur as a result of doing so, including (but not limited to): loss of warranty, loss of all data, loss of all privacy, security vulnerabilities and device damage.</p>"
-                color: "#343434"
+            // The words scroll when the screen is too short for all of
+            // it (the Q25): the title and the buttons stay in view.
+            Flickable {
+                id: bodyFlick
                 anchors.left: parent.left
-                anchors.leftMargin: Units.gu(1)
                 anchors.right: parent.right
-                anchors.rightMargin: Units.gu(1)
-                font.pixelSize: FontUtils.sizeToPixels("16pt")
-                font.family: "Prelude"
-                wrapMode: Text.WordWrap
+                height: Math.min(body.implicitHeight,
+                                 feedsPage.height - Units.gu(4) - overlayRect.topPadding - overlayRect.bottomPadding
+                                 - title.height - buttonRow.height - 2 * contentColumn.spacing)
+                contentWidth: width
+                contentHeight: body.implicitHeight
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+                ScrollIndicator.vertical: ScrollIndicator { }
+
+                Text {
+                    id: body
+                    text: "<p>By adding a non-webos-ports feed, you're trusting both the package developers and feed maintainer, and that their sites haven't been hacked.</p><br><p>You take full responsibility for any and all potential outcomes that may occur as a result of doing so, including (but not limited to): loss of warranty, loss of all data, loss of all privacy, security vulnerabilities and device damage.</p>"
+                    color: "#343434"
+                    anchors.left: parent.left
+                    anchors.leftMargin: Units.gu(1)
+                    anchors.right: parent.right
+                    anchors.rightMargin: Units.gu(1)
+                    font.pixelSize: FontUtils.sizeToPixels("16pt")
+                    font.family: "Prelude"
+                    wrapMode: Text.WordWrap
+                }
             }
 
             Row {
+                id: buttonRow
                 spacing: Units.gu(2)
                 Button {
                     text: "OK"
@@ -174,7 +191,9 @@ BasePage {
             id: feedList
             anchors.left: parent.left
             anchors.right: parent.right
-            height: column.height - column.spacing
+            // What the label above leaves, so the list ends above the
+            // page's buttons.
+            height: column.height - label1.height - column.spacing
 
             clip: true
 
@@ -259,9 +278,5 @@ BasePage {
             }
         }
 
-        Item { // spacer
-            height: Units.gu(2)
-            width: Units.gu(1) // needed else it will be ignored
-        }
     }
 }

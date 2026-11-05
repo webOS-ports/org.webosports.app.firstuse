@@ -375,40 +375,55 @@ BasePage {
         anchors.fill: content
         spacing: Units.gu(2)
 
-        Switch {
-            id: timeFormatSwitch
-            LayoutMirroring.enabled: true
-            text: "Time Format"
-
-            LuneOSSwitch.textColor: "white"
-
-            checked: currentTimeFormat === "HH12" ? false : true
-            anchors.left: parent.left
-
-            LuneOSSwitch.labelOn: "24H"
-            LuneOSSwitch.labelOff: "12H"
-
-            onClicked:
-            {
-                timeFormat = timeFormatSwitch.checked ? "HH24" : "HH12"
-                applySelectedTimeFormat(timeFormat)
-            }
-        }
-
-        TextField {
-            id: filterTextField
-            placeholderText: "Filter list..."
-            height: Units.gu(4)
-            font.pixelSize: Units.gu(36/13.5)
+        // The time format switch sits beside the filter field instead of on a
+        // row of its own, so that on a short screen such as the Q25's the list
+        // keeps room for more than one time zone.
+        Item {
+            id: filterRow
             width: parent.width
-            topPadding: 0; bottomPadding: 0
+            height: Math.max(filterTextField.height, timeFormatSwitch.height)
+
+            TextField {
+                id: filterTextField
+                placeholderText: "Filter list..."
+                height: Units.gu(4)
+                font.pixelSize: Units.gu(36/13.5)
+                anchors.left: parent.left
+                anchors.right: timeFormatSwitch.left
+                anchors.rightMargin: Units.gu(2)
+                anchors.verticalCenter: parent.verticalCenter
+                topPadding: 0; bottomPadding: 0
+            }
+
+            Switch {
+                id: timeFormatSwitch
+                // Mirrored, so its label comes first and anchors.left puts it
+                // on the right.
+                LayoutMirroring.enabled: true
+                text: "Time Format"
+
+                LuneOSSwitch.textColor: "white"
+
+                checked: currentTimeFormat === "HH12" ? false : true
+                anchors.left: parent.left
+                anchors.verticalCenter: parent.verticalCenter
+
+                LuneOSSwitch.labelOn: "24H"
+                LuneOSSwitch.labelOff: "12H"
+
+                onClicked:
+                {
+                    timeFormat = timeFormatSwitch.checked ? "HH24" : "HH12"
+                    applySelectedTimeFormat(timeFormat)
+                }
+            }
         }
 
         ListView {
             id: timezoneList
             anchors.left: parent.left
             anchors.right: parent.right
-            height: column.height - column.spacing - filterTextField.height - timeFormatSwitch.height - column.spacing
+            height: column.height - column.spacing - filterRow.height
             snapMode: ListView.SnapToItem	
 
             clip: true

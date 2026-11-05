@@ -88,7 +88,7 @@ BasePage {
             }
         }
         countryList.currentIndex = currentRegionIndex
-        countryList.positionViewAtIndex(currentRegionIndex, ListView.Center)
+        showRow(currentRegionIndex)
         filteredCountryModel.syncWithFilter();
     }
 
@@ -102,6 +102,16 @@ BasePage {
         currentRegion = '{"countryName":"United States","countryCode":"us"}'
         //We want to see if we can get the country based on the MCC of our sim card
         networkIdCountryMapper.loadData()
+    }
+
+    // Centres the row at index, then moves the list up to the nearest whole
+    // row: centring alone can leave the top row half hidden under the filter
+    // field. All rows are the same height.
+    function showRow(index) {
+        countryList.positionViewAtIndex(index, ListView.Center)
+        var rowHeight = Units.gu(4)
+        var above = countryList.contentY - countryList.originY
+        countryList.contentY = countryList.originY + Math.floor(above / rowHeight) * rowHeight
     }
 
     function applySelectedRegion(countryCode, countryName) {
@@ -162,7 +172,7 @@ BasePage {
                     applySelectedRegion(only.countryCode, only.countryName);
             }
             countryList.currentIndex = index
-            countryList.positionViewAtIndex(index, ListView.Center)
+            showRow(index)
         }
     }
 	
