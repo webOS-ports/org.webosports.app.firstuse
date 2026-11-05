@@ -43,6 +43,16 @@ BasePage {
         usePrivateBus: true
     }
 
+    // Centres the row at index, then moves the list up to the nearest whole
+    // row: centring alone can leave the top row half hidden under the filter
+    // field. All rows are the same height.
+    function showRow(index) {
+        localeList.positionViewAtIndex(index, ListView.Center)
+        var rowHeight = Units.gu(4)
+        var above = localeList.contentY - localeList.originY
+        localeList.contentY = localeList.originY + Math.floor(above / rowHeight) * rowHeight
+    }
+
     function applySelectedLocale(languageCode, countryCode, countryName) {
         var request = {
             locale: {
@@ -116,7 +126,7 @@ BasePage {
                                 }
 
                                 localeList.currentIndex = currentLocaleIndex;
-                                localeList.positionViewAtIndex(currentLocaleIndex, ListView.Center);
+                                showRow(currentLocaleIndex);
                                 filteredLocaleModel.syncWithFilter();
                             }
 
@@ -159,7 +169,7 @@ BasePage {
                     }
                 }
                 localeList.currentIndex = index
-                localeList.positionViewAtIndex(index, ListView.Center)
+                showRow(index)
             }
         }
 

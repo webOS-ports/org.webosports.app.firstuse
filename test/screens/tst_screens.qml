@@ -140,6 +140,14 @@ TestCase {
         expect(r.y + r.h <= buttonsTop + 1, what + " reaches " + (r.y + r.h) + ", under the buttons at " + buttonsTop);
     }
 
+    // A list scrolled to its current row starts on a whole row, not on one
+    // half hidden under what sits above it.
+    function verifyWholeTopRow(list, what) {
+        var top = list.itemAt(list.width / 2, list.contentY + 1);
+        expect(top !== null && Math.abs(top.y - list.contentY) <= 1,
+               what + " starts on a cut row: " + (top ? top.y : "none") + " at the top " + list.contentY);
+    }
+
     function forwardTextOf(p) {
         return p.forwardButtonText;
     }
@@ -202,6 +210,7 @@ TestCase {
         verify(list !== null, "no language list");
         tryVerify(function() { return list.count > 0; }, 5000, "no languages");
         verifyClearOfButtons(p, list, "the language list");
+        verifyWholeTopRow(list, "the language list");
         shot("02-language");
 
         p = next(p, "Next");
@@ -211,6 +220,7 @@ TestCase {
         verify(list !== null, "no country list");
         tryVerify(function() { return list.count > 0; }, 5000, "no countries");
         verifyClearOfButtons(p, list, "the country list");
+        verifyWholeTopRow(list, "the country list");
         shot("03-country");
 
         p = next(p, "Next");
@@ -220,6 +230,15 @@ TestCase {
         verify(list !== null, "no time zone list");
         tryVerify(function() { return list.count > 0; }, 5000, "no time zones");
         verifyClearOfButtons(p, list, "the time zone list");
+        // Room for the chosen time zone whole and some of the next, so the
+        // list shows there is more to choose from.
+        tryVerify(function() { return list.currentItem !== null; }, 5000, "no current time zone");
+        expect(list.height >= list.currentItem.height + Units.gu(4),
+               "the time zone list (" + list.height + ") has no room for more than one of its rows ("
+               + list.currentItem.height + ")");
+        var formatSwitch = find(p, function(c) { return c instanceof Switch && c.visible; });
+        verify(formatSwitch !== null, "no time format switch");
+        verifyInside(formatSwitch, "the time format switch");
         shot("04-timezone");
 
         p = next(p, "Next");
