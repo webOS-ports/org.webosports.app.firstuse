@@ -17,6 +17,7 @@
 
 import QtQuick
 import QtQuick.Controls
+import QtQuick.Controls.LuneOS
 import QtTest
 
 import "../qml"
@@ -119,6 +120,20 @@ Item {
             verify(popupChild("connectProblemStop").visible);
             popupChild("connectProblemStop").clicked();
             compare(luna.callsTo(cancelUri).length, 1, "Stop connecting did not cancel");
+            tryCompare(popup(), "opened", false, 2000);
+        }
+
+        // webOS: stopping destroys nothing, so it is the primary dark grey
+        // button, not red; the way out (Keep waiting) left of it.
+        function test_stopIsNotRedAndKeepWaitingIsLeft() {
+            luna.reply(tapAndGetConnect(), refused(101, "Already connecting to a network"));
+            tryCompare(popup(), "opened", true, 2000);
+            var stop = popupChild("connectProblemStop");
+            var wait = popupChild("connectProblemDismiss");
+            compare(stop.LuneOSButton.mainColor, stop.LuneOSButton.grayColor);
+            verify(stop.LuneOSButton.mainColor !== stop.LuneOSButton.negativeColor);
+            tryVerify(function() { return wait.width > 0 && wait.mapToItem(null, 0, 0).x < stop.mapToItem(null, 0, 0).x; }, 2000, "Keep waiting left of Stop connecting");
+            wait.clicked();
             tryCompare(popup(), "opened", false, 2000);
         }
 
