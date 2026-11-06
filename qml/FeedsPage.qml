@@ -102,6 +102,19 @@ BasePage {
             Row {
                 id: buttonRow
                 spacing: Units.gu(2)
+                // The way out, in the default light colour (red is for
+                // destructive actions), left of OK (webOS).
+                Button {
+                    text: "Cancel"
+                    LuneOSButton.mainColor: LuneOSButton.secondaryColor
+
+                    width: contentColumn.width / 2 - Units.gu(2)
+                    onClicked:
+                    {
+                        overlayRect.close();
+                    }
+                }
+
                 Button {
                     text: "OK"
                     LuneOSButton.mainColor: LuneOSButton.affirmativeColor
@@ -113,18 +126,6 @@ BasePage {
                         {
                             overlayRect._callback()
                         }
-                        overlayRect.close();
-                    }
-                }
-
-
-                Button {
-                    text: "Cancel"
-                    LuneOSButton.mainColor: LuneOSButton.negativeColor
-
-                    width: contentColumn.width / 2 - Units.gu(2)
-                    onClicked:
-                    {
                         overlayRect.close();
                     }
                 }
