@@ -24,6 +24,9 @@
 #include <QtGlobal>
 
 #include "plugin.h"
+#include "handoff.h"
+
+#include <cstring>
 
 class FirstUseUtils : public QObject
 {
@@ -57,6 +60,22 @@ public:
                      qPrintable(marker.fileName()),
                      qPrintable(marker.errorString()));
         }
+    }
+
+    /*
+     * What to open once first use is over: the Backup app on its restore
+     * flow, the Accounts app. Neither can run during first use; LunaAppManager
+     * opens them when the device enters normal operation (see handoff.h).
+     * Called before markFirstUseDone(), which is what ends first use.
+     */
+    Q_INVOKABLE bool handOff(bool restore, bool accounts) // NOLINT(readability-convert-member-functions-to-static)
+    {
+        const int err = firstuse::writeHandoff(firstuse::kHandoffPath, restore, accounts);
+        if (err) {
+            qWarning("firstuse: could not write %s: %s", firstuse::kHandoffPath, strerror(err));
+            return false;
+        }
+        return true;
     }
 };
 

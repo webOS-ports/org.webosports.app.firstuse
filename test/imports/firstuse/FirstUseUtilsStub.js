@@ -17,6 +17,16 @@
 
 .pragma library
 
+// What the app asked for, for the tests to look at.
+var handOffs = [];
+var doneCount = 0;
+
 function markFirstUseDone() {
+    doneCount++;
     console.log("First use marked as done!");
+}
+
+function handOff(restore, accounts) {
+    handOffs.push({ restore: restore, accounts: accounts, beforeDone: doneCount === 0 });
+    return true;
 }

@@ -7,6 +7,49 @@ Description
 This application is running as first application when LuneOS is installed onto a new
 device and will guide the user through the setup process of the system.
 
+## Signing in and what comes after
+
+The account step signs in with a Community Account through
+`com.palm.accountservices/authenticateAccount`
+(org.webosports.service.communityaccount), or is skipped. A link opens a page
+of its own (`CreateAccountPage`, pushed onto the stack, not one of the steps)
+to make one with `createNovaAccount`. That page fetches the account server's
+terms of service (`getTermsAndConditions`, plain text, shown as plain text on
+`TermsPage`); the account is made only once "I agree to the Terms of Service"
+is ticked, and the server signs the device in with it. Signed in either way,
+the account page says so for a moment and setup goes on by itself. The name,
+address and password go to that service and on to the account server; the
+app does not keep the password, and clears it from the field as soon as it
+is sent. A refusal is a sentence for the service's code (`qml/js/Account.js`)
+with the code itself under it in small type, scrolled into view; the
+service's own error text is for the log and not shown.
+
+## Software update
+
+After Wi-Fi and the feeds comes a software update step, shown only when
+there is an update to install. main.qml asks org.webosports.service.update
+(`checkUpdate`, as the Settings app's System Updates page does; it shows no
+toast of its own while first use runs) in the background as the feeds step
+opens. No update, or no answer that says there is one, and the step is passed
+over, going on and going back. An update, and `UpdatesPage` opens with that
+answer. Still waiting, and the page checks itself and goes on by itself if
+there is nothing to install. An update can be installed there ("Install now": `downloadUpdate`, then
+`initiateUpdate`, which restarts the device into the update) or left for
+later. Before the restart the page sets the systemservice preference
+`firstUseResume` to `"Updates"`; main.qml reads it as it starts and opens that
+step, with nothing before it, so setup goes on after the update rather than
+from the start. The step clears it when it opens again, and when the restart
+could not be started; if the preference cannot be set, the restart is not
+started.
+
+Restoring a backup and adding accounts cannot happen during first use: the
+Accounts app needs a normal session, and a restore ends in a restart. The last
+page lets the user pick either or both; on "Done!" the app writes the choice
+to `/var/luna/preferences/firstuse-handoff.json` (`{"restore":..,"accounts":..}`,
+whole or not at all, before first use is marked done), and LunaAppManager
+opens the Backup app on its restore flow and the Accounts app once the device
+enters normal operation, then removes the file.
+
 ## Contributing
 
 If you want to contribute you can just start with cloning the repository and make your
@@ -28,12 +71,29 @@ checkout) and Qt 6's `qmltestrunner`; without a display, run it with
     QT_QPA_PLATFORM=offscreen test/run-tests.sh
 
 - `test/tst_wifi_page.qml`: the Wi-Fi page when a connect fails, once.
+- `test/tst_account_page.qml`: signing in - what is sent, the password
+  cleared, one sign-in at a time, a refusal in words with its code, a reply
+  that is not JSON, no service, going on by itself once signed in - and
+  making an account on its own page: the terms on theirs, nothing sent until
+  they are there and agreed to, the password length counted as the server
+  counts it, and back to the account step signed in.
+- `test/tst_updates_page.qml`: the update step - shown only for an update
+  (passed over going on and back, the background check's answer used, the
+  step going on by itself when it finds nothing), an update offered and not
+  forced, the download and its failures, stopping it,
+  the place kept before the restart and only then the restart - and first
+  use starting again at that step after it.
 - `test/screens/tst_screens.qml`: the whole app walked through every step -
   Welcome, language, country, time zone, Wi-Fi (with the passphrase page and
   the connect problem popup), feeds (with the third-party feed warning),
-  licence and the last page - once per screen in `PROFILES`. The default is
+  the update step, licence, the account step (with the new account and terms
+  pages) and the last page (ending with "Done!" and a
+  restore handed off before first use is marked done) - once per screen in `PROFILES`. The default is
   `mindphone q25 tp radon` (480x800, 720x720, 1024x768 and 720x1600, from
   luneos-components' desktop stand-ins); set `PROFILES` to run others, e.g.
   `PROFILES=tp test/run-tests.sh`. Each step checks that its page, title,
   buttons and main content are on screen, have a size and stay clear of the
   buttons, and is saved as `build/test-output/ui/<profile>-<step>.png`.
+
+The plugin's hand-off writer has C++ unit tests of its own, built with
+`-DBUILD_TESTING=ON` and run with `ctest`: `test/unit/tst_handoff.cpp`.

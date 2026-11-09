@@ -11,6 +11,8 @@ QtObject {
     property bool usePrivateBus: false
 
     property var calls: []
+    // Subscriptions other than findnetworks, apart from calls: {uri, args, onReply, onCallFailed, cancelled}.
+    property var subscriptions: []
     property var findNetworksReply
 
     function call(uri, args, onReply, onCallFailed) {
@@ -18,8 +20,14 @@ QtObject {
     }
 
     function subscribe(uri, args, onReply, onCallFailed) {
-        if (uri === "luna://com.palm.wifi/findnetworks")
+        if (uri === "luna://com.palm.wifi/findnetworks") {
             findNetworksReply = onReply;
+            return null;
+        }
+        var sub = { uri: uri, args: JSON.parse(args), onReply: onReply, onCallFailed: onCallFailed, cancelled: false };
+        sub.cancel = function() { sub.cancelled = true; };
+        subscriptions.push(sub);
+        return sub;
     }
 
     function callsTo(uri) {

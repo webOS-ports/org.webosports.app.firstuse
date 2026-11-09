@@ -1,6 +1,7 @@
 /*
  * Copyright (C) 2014 Simon Busch <morphis@gravedo.de>
  * Copyright (C) 2016 Christophe Chapuis <chris.chapuis@gmail.com>
+ * Copyright (C) 2026 Herman van Hazendonk <github.com@herrie.org>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -27,7 +28,10 @@ BasePage {
     title: "Everything setup!"
     forwardButtonText: "Done!"
 
-    signal accountsButtonClicked()
+    // What to open once first use is over: neither can run while it does.
+    // main.qml hands them to LunaAppManager when "Done!" is tapped.
+    property alias restoreAfterSetup: restoreBox.checked
+    property alias accountsAfterSetup: accountsBox.checked
 
     AppLauncher {
         id: launcher
@@ -84,46 +88,41 @@ BasePage {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 wrapMode: Text.Wrap
-                text: "You can add (email/im/contacts) accounts right away"
+                text: "Once you tap Done, open:"
                 color: "white"
                 font.pixelSize: FontUtils.sizeToPixels("medium")
             }
 
-            Button {
-                id: accountsButton
-                width: buttonWidth
-                text: "Add accounts"
-                onClicked: accountsButtonClicked()
+            ChoiceBox {
+                id: restoreBox
+                objectName: "restoreAfterSetup"
+                anchors.left: parent.left
+                anchors.right: parent.right
+                text: "Backup, to restore my data"
+            }
+
+            ChoiceBox {
+                id: accountsBox
+                objectName: "accountsAfterSetup"
+                anchors.left: parent.left
+                anchors.right: parent.right
+                text: "Accounts, to add e-mail, contacts and calendars"
             }
 
             Item {
                 anchors.left: parent.left
                 anchors.right: parent.right
-                height: Units.gu(5)
+                height: Units.gu(2)
             }
 
             Text {
                 anchors.left: parent.left
                 anchors.right: parent.right
                 wrapMode: Text.Wrap
-                text: "Or you can now start using your device right away and add accounts later. Enjoy it!"
+                text: "Or you can now start using your device right away and do both later. Enjoy it!"
                 color: "white"
                 font.pixelSize: FontUtils.sizeToPixels("medium")
             }
         }
     }
-
-    onAccountsButtonClicked: {
-            console.log("Launching Accounts app");
-            launcher.launch("com.palm.app.accounts", null, successCB, handleLaunchAppError);
-        }
-
-    function handleLaunchAppError(message) {
-            console.log("Could not start application com.palm.app.accounts: " + message);
-    }
-
-    function successCB(response) {
-            console.log("Successfully started application com.palm.app.accounts");
-    }
-
 }

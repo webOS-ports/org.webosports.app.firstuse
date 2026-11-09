@@ -20,6 +20,7 @@ import QtQuick.Controls
 import QtTest
 
 import LunaNext.Common 0.1
+import firstuse 1.0
 
 /*
  * The app as a whole - qml/main.qml - walked through every step the way a
@@ -148,6 +149,20 @@ TestCase {
                what + " starts on a cut row: " + (top ? top.y : "none") + " at the top " + list.contentY);
     }
 
+    // Each [item, what] can be scrolled fully into flick's view.
+    function scrollEachIntoView(flick, items) {
+        items.forEach(function(w) {
+            verify(w[0] !== null, "no " + w[1]);
+            var top = w[0].mapToItem(flick.contentItem, 0, 0).y;
+            flick.contentY = Math.max(0, Math.min(top + w[0].height - flick.height,
+                                                  flick.contentHeight - flick.height));
+            var at = w[0].mapToItem(flick, 0, 0).y;
+            expect(at >= -1 && at + w[0].height <= flick.height + 1,
+                   w[1] + " cannot be scrolled into view: " + at + " in " + flick.height);
+        });
+        flick.contentY = flick.contentHeight - flick.height > 0 ? flick.contentHeight - flick.height : 0;
+    }
+
     function forwardTextOf(p) {
         return p.forwardButtonText;
     }
@@ -183,7 +198,7 @@ TestCase {
         verify(app !== null, "main.qml made");
         // The stand-in's deviceInfo says qemux86, which has no Wi-Fi step;
         // a phone has one.
-        app.pageList = [ "Welcome", "Locale", "Country", "TimeZone", "WiFi", "Feeds", "LicenseAgreement", "Finished" ];
+        app.pageList = [ "Welcome", "Locale", "Country", "TimeZone", "WiFi", "Feeds", "Updates", "LicenseAgreement", "Account", "Finished" ];
         tryVerify(function() { return app.visible && app.contentItem.width === app.width; }, 5000);
         compare(app.width, Settings.displayWidth);
         compare(app.height, Settings.displayHeight);
@@ -340,15 +355,134 @@ TestCase {
         mouseClick(button(warning, "Cancel"));
         tryVerify(function() { return !ok.visible || ok.width === 0 || !warning.visible; }, 5000, "the warning stayed");
 
+        // The stand-in has no update service, which leaves the update step
+        // out (tst_updates_page.qml): an update to offer is given as the
+        // service would, so the step is shown. It is put back to waiting for
+        // its first picture.
+        app.updateReply = { payload: JSON.stringify({ returnValue: true, success: true, needUpdate: true,
+            changesSinceLast: [ { version: 26, changes: [ "Wi-Fi fixes" ] } ] }) };
+        app.updateCheck = "available";
         p = next(p, "Continue");
+        compare(p.title, "Software Update");
+        p.updateState = "checking";
+        p.statusText = "Checking for updates...";
+        verifyStep(p, "Skip");
+        verifyInside(findChild(p, "updatesStatus"), "the update status");
+        shot("10-updates-checking");
+        p._checkReply({ payload: JSON.stringify({ returnValue: true, success: true, needUpdate: true,
+            changesSinceLast: [ { version: 26, changes: [ "Wi-Fi fixes", "A newer kernel", "Faster start-up" ] },
+                                { version: 25, changes: [ "Messaging fixes" ] } ] }) });
+        verifyStep(p, "Later");
+        var updatesFlick = findChild(p, "updatesFlick");
+        verifyClearOfButtons(p, updatesFlick, "the update page's content");
+        scrollEachIntoView(updatesFlick, [[findChild(p, "updatesStatus"), "the update status"],
+                                          [findChild(p, "updatesInstall"), "Install now"]]);
+        updatesFlick.contentY = 0;
+        shot("10-updates-available");
+        // Downloading: no way back or on until it is done or stopped.
+        p.installNow();
+        p._downloadReply({ payload: JSON.stringify({ percentage: "42.50" }) });
+        compare(p.statusText, "Downloading the update: 42%");
+        verify(!p.forwardButtonVisible, "setup can go on during the download");
+        verifyInside(findChild(p, "updatesCancel"), "Stop download");
+        verifyInside(findChild(p, "updatesProgress"), "the progress bar");
+        shot("10-updates-downloading");
+        mouseClick(findChild(p, "updatesCancel"));
+        compare(p.updateState, "available");
+
+        p = next(p, "Later");
         compare(p.title, "License Agreement");
         verifyStep(p, "Accept");
         var licence = find(p, function(c) { return c instanceof Flickable && !(c instanceof ListView); });
         verify(licence !== null, "no licence text");
         verifyClearOfButtons(p, licence, "the licence text");
-        shot("10-licence");
+        shot("11-licence");
 
         p = next(p, "Accept");
+        compare(p.title, "Your Community Account");
+        // Signing in is not needed to go on.
+        verifyStep(p, "Skip");
+        var account = p;
+        var accountFlick = findChild(p, "accountFlick");
+        verify(accountFlick !== null, "no scrolling for the account page");
+        verifyClearOfButtons(p, accountFlick, "the account page's content");
+        shot("12-account");
+        scrollEachIntoView(accountFlick, [[findChild(p, "accountEmail"), "the e-mail field"],
+                                          [findChild(p, "accountPassword"), "the password field"],
+                                          [findChild(p, "accountSignIn"), "Sign in"],
+                                          [findChild(p, "accountStartCreate"), "the link to make an account"],
+                                          [findChild(p, "accountPrivacy"), "the privacy note"]]);
+        shot("12-account-end");
+        compare(findChild(p, "accountPassword").echoMode, TextInput.Password);
+        // A refusal, with its code.
+        accountFlick.contentY = 0;
+        p.signInReply({ payload: JSON.stringify({ returnValue: false, errorCode: "SERVER_UNREACHABLE" }) });
+        waitForRendering(accountFlick);
+        // Scrolled to, however short the screen.
+        var refusal = findChild(p, "accountStatus");
+        tryVerify(function() {
+            var at = refusal.mapToItem(accountFlick, 0, 0).y;
+            return at >= -1 && at + refusal.height <= accountFlick.height + 1;
+        }, 2000, "the refusal is not scrolled into view");
+        verifyFits(findChild(findChild(p, "accountStatus"), "statusLine"), "the refusal");
+        shot("12-account-refused");
+
+        // Making an account: a page of its own, from the link.
+        depth = stack().depth;
+        var create = findChild(p, "accountStartCreate");
+        accountFlick.contentY = Math.max(0, Math.min(create.mapToItem(accountFlick.contentItem, 0, 0).y,
+                                                     accountFlick.contentHeight - accountFlick.height));
+        waitForRendering(accountFlick);
+        mouseClick(create);
+        tryVerify(function() { return stack().depth === depth + 1; }, 5000, "no page to make an account");
+        p = page();
+        compare(p.title, "Create a Community Account");
+        verify(!p.forwardButtonVisible);
+        var para = "We store only what is needed to run the service: your account details and a per-device sign-in token, and any app data you choose to sync.";
+        p.termsReply({ payload: JSON.stringify({ returnValue: true,
+            terms: "Terms of Service\n\n" + [1, 2, 3, 4, 5, 6].map(function(n) { return n + ". Section\n\n" + para; }).join("\n\n") }) });
+        var createFlick = findChild(p, "createFlick");
+        verifyInside(createFlick, "the new account's form");
+        shot("13-create");
+        scrollEachIntoView(createFlick, [[findChild(p, "createFirstName"), "the first name field"],
+                                         [findChild(p, "createLastName"), "the last name field"],
+                                         [findChild(p, "createEmail"), "the e-mail field"],
+                                         [findChild(p, "createPassword"), "the password field"],
+                                         [findChild(p, "createAgree"), "I agree"],
+                                         [findChild(p, "createReadTerms"), "the link to the terms"],
+                                         [findChild(p, "createAccount"), "Create account"],
+                                         [findChild(p, "createHaveOne"), "the link back to signing in"],
+                                         [findChild(p, "createPrivacy"), "the privacy note"]]);
+        shot("13-create-end");
+        var agree = findChild(p, "createAgree");
+        expect(!agree.contentItem.truncated, "I agree is cut off");
+        expect(Qt.colorEqual(agree.contentItem.color, "white"), "I agree is " + agree.contentItem.color);
+
+        // The terms, on a page of their own: all of them can be scrolled to.
+        var createPage = p;
+        p.openTerms();
+        tryVerify(function() { return stack().depth === depth + 2; }, 5000, "no terms page");
+        p = page();
+        compare(p.title, "Terms of Service");
+        verifyStep(p, "I agree");
+        var termsFlick = findChild(p, "termsFlick");
+        verifyClearOfButtons(p, termsFlick, "the terms");
+        shot("14-terms");
+        termsFlick.contentY = Math.max(0, termsFlick.contentHeight - termsFlick.height);
+        waitForRendering(termsFlick);
+        var termsText = findChild(p, "termsText");
+        expect(termsText.height === termsFlick.contentHeight, "the terms are not all in the scrolled content");
+        shot("14-terms-end");
+        mouseClick(button(p, "I agree"));
+        tryVerify(function() { return stack().depth === depth + 1; }, 5000, "I agree did not go back");
+        verify(agree.checked, "I agree did not tick the box");
+        compare(page(), createPage);
+        mouseClick(button(createPage, "Back"));
+        tryVerify(function() { return stack().depth === depth; }, 5000, "Back did not go back");
+        p = page();
+        compare(p, account);
+
+        p = next(p, "Skip");
         compare(p.title, "Everything setup!");
         verifyStep(p, "Done!");
         // A short screen scrolls the page's words: each is checked once
@@ -356,21 +490,42 @@ TestCase {
         var finishedFlick = findChild(p, "finishedFlick");
         verify(finishedFlick !== null, "no scrolling for the finished page");
         verifyClearOfButtons(p, finishedFlick, "the finished page's words");
-        var accounts = button(p, "Add accounts");
+        var restore = findChild(p, "restoreAfterSetup");
+        var accounts = findChild(p, "accountsAfterSetup");
+        verify(restore !== null && accounts !== null);
+        // Nothing is opened afterwards unless asked for.
+        verify(!restore.checked && !accounts.checked);
+        [[restore, "the restore choice"], [accounts, "the accounts choice"]].forEach(function(w) {
+            // Read whole, and light on the dark page. (On screen once
+            // scrolled to, below.)
+            expect(w[0].contentItem.width > 0 && w[0].contentItem.height > 0, w[1] + " has no size");
+            expect(!w[0].contentItem.truncated, w[1] + " is cut off");
+            expect(w[0].contentItem.lineCount === 1 || w[0].contentItem.wrapMode !== Text.NoWrap,
+                   w[1] + " does not wrap");
+            expect(Qt.colorEqual(w[0].contentItem.color, "white"), w[1] + " is " + w[0].contentItem.color);
+        });
         var later = find(p, function(c) { return c instanceof Text && c.text.indexOf("Or you can now") === 0; });
         verify(later !== null);
-        shot("11-finished");
-        [[accounts, "Add accounts"], [later, "the closing words"]].forEach(function(w) {
-            var top = w[0].mapToItem(finishedFlick.contentItem, 0, 0).y;
-            finishedFlick.contentY = Math.max(0, Math.min(top + w[0].height - finishedFlick.height,
-                                                          finishedFlick.contentHeight - finishedFlick.height));
-            var at = w[0].mapToItem(finishedFlick, 0, 0).y;
-            expect(at >= -1 && at + w[0].height <= finishedFlick.height + 1,
-                   w[1] + " cannot be scrolled into view: " + at + " in " + finishedFlick.height);
-        });
-        finishedFlick.contentY = finishedFlick.contentHeight - finishedFlick.height > 0
-                ? finishedFlick.contentHeight - finishedFlick.height : 0;
-        shot("11-finished-end");
+        shot("15-finished");
+        scrollEachIntoView(finishedFlick, [[restore, "the restore choice"],
+                                           [accounts, "the accounts choice"],
+                                           [later, "the closing words"]]);
+        shot("15-finished-end");
+
+        // Asking for a restore, and nothing else, hands that to
+        // LunaAppManager before first use is marked done. Done! ends the
+        // app, so this is the walk's last step.
+        finishedFlick.contentY = Math.max(0, Math.min(restore.mapToItem(finishedFlick.contentItem, 0, 0).y,
+                                                      finishedFlick.contentHeight - finishedFlick.height));
+        mouseClick(restore);
+        verify(restore.checked, "the restore choice did not take a tap");
+        var handOffs = FirstUseUtils.handOffs.length;
+        mouseClick(button(p, "Done!"));
+        tryVerify(function() { return FirstUseUtils.handOffs.length === handOffs + 1; }, 5000, "nothing handed off");
+        var handed = FirstUseUtils.handOffs[handOffs];
+        compare(handed.restore, true);
+        compare(handed.accounts, false);
+        verify(handed.beforeDone, "handed off after first use was marked done");
 
         verify(allProblems.length === 0, allProblems.join("\n"));
     }
