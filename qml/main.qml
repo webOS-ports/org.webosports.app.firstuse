@@ -32,10 +32,11 @@ WebOSWindow {
     width: Settings.displayWidth
     height: Settings.displayHeight
 
-    property variant pageList: [ "Welcome", "Locale", "Country", "TimeZone", "WiFi", "Feeds", "LicenseAgreement", "Account", "Finished" ]
+    property variant pageList: [ "Welcome", "Locale", "Country", "TimeZone", "WiFi", "Feeds", "Updates", "LicenseAgreement", "Account", "Finished" ]
 
     LunaService {
         id: service
+        objectName: "firstUseService"
         name: "org.webosports.app.firstuse"
         usePrivateBus: true
     }
@@ -49,12 +50,29 @@ WebOSWindow {
         function gotDeviceInfoSuccess(message) {
             var response = JSON.parse(message.payload)
             if(response.device_name.substring(0,7)==="qemux86"){
-                pageList = [ "Welcome", "Locale", "Country", "TimeZone", "Feeds", "LicenseAgreement", "Account", "Finished" ];
+                pageList = [ "Welcome", "Locale", "Country", "TimeZone", "Feeds", "Updates", "LicenseAgreement", "Account", "Finished" ];
             }
         }
 
         function gotDeviceInfoFailure(message) {
             console.log("Failed to get deviceInfo: " + message.payload);
+        }
+
+        // Back from installing a system update (UpdatesPage): setup goes on
+        // where it was, rather than from the start.
+        service.call("luna://com.palm.systemservice/getPreferences",
+                     JSON.stringify({ keys: [ "firstUseResume" ] }),
+                     gotResume, function(message) { })
+
+        function gotResume(message) {
+            var response = null;
+            try {
+                response = JSON.parse(message.payload);
+            } catch (e) {
+                return;
+            }
+            if (response && response.returnValue === true && response.firstUseResume === "Updates")
+                pageStack.resumeAt("Updates");
         }
 
         window.show()
@@ -107,6 +125,27 @@ WebOSWindow {
                 FirstUseUtils.markFirstUseDone();
                 window.finish();
             }
+        }
+
+        // Straight to a page, as First Use starts, with nothing before it to
+        // go back to. Only while the first page is all there is.
+        function resumeAt(name) {
+            var i = pageList.indexOf(name);
+            if (i < 1 || _currentPage !== 0 || depth !== 1)
+                return;
+            var pageComp = Qt.createComponent(Qt.resolvedUrl(buildPagePath(i)));
+            if (pageComp.status === Component.Error) {
+                console.log("Error loading component:", pageComp.errorString());
+                return;
+            }
+            var page = pageComp.createObject(pageStack, { resumed: true });
+            pageStack.replace(page, {}, StackView.Immediate);
+            var items = [];
+            for (var k = 0; k < i; k++)
+                items.push(null);
+            items.push(page);
+            _pageItemList = items;
+            _currentPage = i;
         }
 
         function back() {

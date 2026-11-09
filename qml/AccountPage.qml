@@ -21,38 +21,33 @@ import QtQuick.Controls 2.0
 import LunaNext.Common 0.1
 import LuneOS.Service 1.0
 
+import "js/Account.js" as Account
+
 /*
- * Signing in with a Community Account, making one, or skipping it.
+ * Signing in with a Community Account, or skipping it. Making a new one is a
+ * page of its own (CreateAccountPage), opened from the link here.
  *
  * com.palm.accountservices (org.webosports.service.communityaccount) signs
- * in or signs up, makes the account the device's profile and keeps the token
- * it gets back; the password is only passed on, never kept here or there.
- * Signing up shows the account server's terms first, as plain text: creating
- * the account is agreeing to them.
+ * in, makes the account the device's profile and keeps the token it gets
+ * back; the password is only passed on, never kept here or there. Once
+ * signed in - here or on the new account's page - the page says so for a
+ * moment and setup goes on by itself.
  */
 BasePage {
     id: page
 
     title: "Your Community Account"
     forwardButtonText: signedInAs !== "" ? "Next" : "Skip"
-    keyboardFocusItem: firstName.activeFocus ? firstName
-                     : lastName.activeFocus ? lastName
-                     : email.activeFocus ? email : password
+    keyboardFocusItem: email.activeFocus ? email : password
 
-    //! The account signed in with on this page, "" while there is none.
+    //! The account signed in with, "" while there is none.
     property string signedInAs: ""
     property bool busy: false
-    //! Making a new account rather than signing in to one.
-    property bool creating: false
-    //! The server's terms, as plain text; "" until they have come.
-    property string terms: ""
-    property bool termsBusy: false
+    //! How long "Signed in as ..." shows before setup goes on.
+    property int goOnAfterMs: 1500
 
     readonly property string authenticateUri: "luna://com.palm.accountservices/authenticateAccount"
-    readonly property string createUri: "luna://com.palm.accountservices/createNovaAccount"
-    readonly property string termsUri: "luna://com.palm.accountservices/getTermsAndConditions"
-    readonly property string unavailableText: "Signing in is not available right now. You can sign in later from Accounts."
-    readonly property string termsUnavailableText: "The terms of service could not be fetched, so an account cannot be made right now. Check the network and try again, or skip this."
+    readonly property string unavailableText: Account.UNAVAILABLE
 
     LunaService {
         id: service
@@ -61,125 +56,96 @@ BasePage {
         usePrivateBus: true
     }
 
-    // What the service said, shown as plain text and kept short: it can come
-    // from the account server.
-    function showError(text) {
-        status.isError = true;
-        status.text = (text && text.length) ? String(text).substring(0, 200) : unavailableText;
+    Component {
+        id: createPage
+        CreateAccountPage { }
     }
 
-    // The server's codes this page has words for; anything else as it came.
-    function showRefusal(reply) {
-        var known = {
-            "AUTH_FAILED": "That e-mail address and password do not match an account.",
-            "EMAIL_TAKEN": "There is already an account with this e-mail address. Sign in with it instead.",
-            "INVALID_EMAIL": "Please enter a valid e-mail address.",
-            "WEAK_PASSWORD": "The password needs at least 8 characters."
-        };
-        var code = reply ? String(reply.errorCode) : "";
-        if (known.hasOwnProperty(code))
-            showError(known[code]);
-        // Something inside the device, not the server's answer: its text is
-        // bus calls and payloads, of no use on this screen.
-        else if (code === "CONNECTOR_EXCEPTION")
-            showError("");
-        else
-            showError(reply ? reply.errorText : "");
+    Timer {
+        id: goOn
+        objectName: "accountGoOn"
+        interval: page.goOnAfterMs
+        onTriggered: pageStack.next()
+    }
+
+    Timer {
+        id: reveal
+        interval: 50
+        onTriggered: page.revealStatus()
+    }
+
+    // A message below the fold is no message: it is scrolled to.
+    function revealStatus() {
+        if (!status.visible)
+            return;
+        var y = status.mapToItem(column, 0, 0).y;
+        if (y + status.height > flick.contentY + flick.height)
+            flick.contentY = Math.max(0, Math.min(y + status.height - flick.height, flick.contentHeight - flick.height));
+        else if (y < flick.contentY)
+            flick.contentY = y;
+    }
+
+    function showError(text, code) {
+        status.isError = true;
+        status.text = text;
+        status.code = code || "";
     }
 
     function signIn() {
-        if (busy)
+        if (busy || signedInAs !== "")
             return;
         var address = email.text.trim();
         if (address.length === 0 || password.text.length === 0) {
-            showError("Please enter your e-mail address and password.");
+            showError("Please enter your e-mail address and password.", "");
             return;
         }
-        send(authenticateUri, { email: address, password: password.text }, "Signing in...");
-    }
-
-    function createAccount() {
-        if (busy || terms === "")
-            return;
-        var address = email.text.trim();
-        var first = firstName.text.trim();
-        if (first.length === 0 || address.length === 0 || password.text.length === 0) {
-            showError("Please enter your first name, e-mail address and a password.");
-            return;
-        }
-        send(createUri, { firstName: first, lastName: lastName.text.trim(), email: address, password: password.text },
-             "Making your account...");
-    }
-
-    function send(uri, args, doing) {
         busy = true;
         status.isError = false;
-        status.text = doing;
+        status.code = "";
+        status.text = "Signing in...";
         Qt.inputMethod.hide();
-        var payload = JSON.stringify(args);
+        var payload = JSON.stringify({ email: address, password: password.text });
         // Not kept any longer than the call needs it.
         password.text = "";
-        service.call(uri, payload, signInReply, signInFailed);
+        service.call(authenticateUri, payload, signInReply, signInFailed);
     }
 
     function signInReply(message) {
         busy = false;
-        var reply = null;
-        try {
-            reply = JSON.parse(message.payload);
-        } catch (e) {
-            reply = null;
-        }
+        var reply = Account.parse(message);
         if (!reply || reply.returnValue !== true) {
-            showRefusal(reply);
+            var why = Account.refusal(reply);
+            showError(why.text, why.code);
             return;
         }
-        signedInAs = String(reply.username || reply.accountAlias || email.text.trim());
-        status.isError = false;
-        status.text = (creating ? "Your account is ready. " : "") + "Signed in as " + signedInAs + ".";
+        signedIn(String(reply.username || reply.accountAlias || email.text.trim()), false);
     }
 
     function signInFailed(error) {
         busy = false;
-        showError("");
+        showError(Account.SENTENCES[Account.NO_SERVICE], Account.NO_SERVICE);
     }
 
-    function startCreating() {
-        creating = true;
-        status.text = "";
-        if (terms === "" && !termsBusy) {
-            termsBusy = true;
-            service.call(termsUri, "{}", termsReply, termsFailed);
-        }
+    // Signed in, here or on the new account's page: say so, then go on.
+    function signedIn(name, made) {
+        signedInAs = name;
+        status.isError = false;
+        status.code = "";
+        status.text = (made ? "Your account is ready. " : "") + "Signed in as " + name + ".";
+        goOn.restart();
     }
 
-    function stopCreating() {
-        creating = false;
-        status.text = "";
-    }
-
-    function termsReply(message) {
-        termsBusy = false;
-        var reply = null;
-        try {
-            reply = JSON.parse(message.payload);
-        } catch (e) {
-            reply = null;
-        }
-        if (reply && reply.returnValue === true && typeof reply.terms === "string" && reply.terms.trim().length > 0) {
-            // A screenful or so is what the server sends; more than this is not terms.
-            terms = reply.terms.substring(0, 20000);
+    function openCreate() {
+        if (busy || signedInAs !== "")
             return;
-        }
-        termsFailed("");
-    }
-
-    function termsFailed(error) {
-        termsBusy = false;
-        if (creating) {
-            status.isError = true;
-            status.text = termsUnavailableText;
-        }
+        status.text = "";
+        status.code = "";
+        var p = pageStack.push(createPage, { prefillEmail: email.text.trim() });
+        p.accountMade.connect(function(name) {
+            // Back here, with nothing above, before setup goes on.
+            pageStack.pop(page, StackView.Immediate);
+            signedIn(name, true);
+        });
     }
 
     Flickable {
@@ -201,37 +167,9 @@ BasePage {
                 objectName: "accountIntro"
                 width: parent.width
                 wrapMode: Text.Wrap
-                text: creating
-                      ? "Make a Community Account to use on this device. You will be signed in with it straight away."
-                      : "Sign in with your Community Account to use it on this device, make one, or skip this and sign in later from Accounts."
+                text: "Sign in with your Community Account to use it on this device, or skip this and sign in later from Accounts."
                 color: "white"
                 font.pixelSize: FontUtils.sizeToPixels("medium")
-            }
-
-            TextField {
-                id: firstName
-                objectName: "accountFirstName"
-                width: parent.width
-                height: Units.gu(4)
-                visible: creating
-                font.pixelSize: FontUtils.sizeToPixels("medium")
-                placeholderText: "First name"
-                inputMethodHints: Qt.ImhNoPredictiveText
-                enabled: !busy && signedInAs === ""
-                onAccepted: lastName.forceActiveFocus()
-            }
-
-            TextField {
-                id: lastName
-                objectName: "accountLastName"
-                width: parent.width
-                height: Units.gu(4)
-                visible: creating
-                font.pixelSize: FontUtils.sizeToPixels("medium")
-                placeholderText: "Last name (optional)"
-                inputMethodHints: Qt.ImhNoPredictiveText
-                enabled: !busy && signedInAs === ""
-                onAccepted: email.forceActiveFocus()
             }
 
             TextField {
@@ -252,11 +190,11 @@ BasePage {
                 width: parent.width
                 height: Units.gu(4)
                 font.pixelSize: FontUtils.sizeToPixels("medium")
-                placeholderText: creating ? "Password (at least 8 characters)" : "Password"
+                placeholderText: "Password"
                 echoMode: showPassword.checked ? TextInput.Normal : TextInput.Password
                 inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 enabled: !busy && signedInAs === ""
-                onAccepted: creating ? Qt.inputMethod.hide() : page.signIn()
+                onAccepted: page.signIn()
             }
 
             ChoiceBox {
@@ -266,92 +204,37 @@ BasePage {
             }
 
             Button {
-                id: signInButton
                 objectName: "accountSignIn"
                 width: buttonWidth
                 text: "Sign in"
-                visible: signedInAs === "" && !creating
+                visible: signedInAs === ""
                 enabled: !busy
                 onClicked: page.signIn()
             }
 
-            Button {
-                objectName: "accountStartCreate"
-                width: buttonWidth
-                text: "Create an account"
-                visible: signedInAs === "" && !creating
-                enabled: !busy
-                onClicked: page.startCreating()
-            }
-
-            Text {
+            StatusText {
                 id: status
+                // Once laid out: the column places it after the change.
+                onTextChanged: reveal.restart()
+                onHeightChanged: if (visible) reveal.restart()
                 objectName: "accountStatus"
-                property bool isError: false
                 width: parent.width
-                wrapMode: Text.Wrap
-                textFormat: Text.PlainText
-                visible: text.length > 0
-                color: isError ? "#ff8a80" : "white"
-                font.pixelSize: FontUtils.sizeToPixels("medium")
             }
 
-            Text {
+            LinkText {
+                objectName: "accountStartCreate"
                 width: parent.width
-                visible: creating && signedInAs === ""
-                text: "Terms of service"
-                color: "white"
-                font.bold: true
-                font.pixelSize: FontUtils.sizeToPixels("medium")
-            }
-
-            Text {
-                objectName: "accountTerms"
-                width: parent.width
-                visible: creating && signedInAs === ""
-                wrapMode: Text.Wrap
-                // The server's words: plain text, so nothing in them is fetched or followed.
-                textFormat: Text.PlainText
-                text: terms !== "" ? terms : (termsBusy ? "Fetching the terms of service..." : "")
-                color: "white"
-                opacity: 0.85
-                font.pixelSize: FontUtils.sizeToPixels("small")
-            }
-
-            Text {
-                width: parent.width
-                visible: creating && signedInAs === "" && terms !== ""
-                wrapMode: Text.Wrap
-                text: "By creating an account you agree to these terms."
-                color: "white"
-                font.pixelSize: FontUtils.sizeToPixels("medium")
-            }
-
-            Button {
-                objectName: "accountCreate"
-                width: buttonWidth
-                text: "Create account"
-                visible: creating && signedInAs === ""
-                enabled: !busy && terms !== ""
-                onClicked: page.createAccount()
-            }
-
-            Button {
-                objectName: "accountHaveOne"
-                width: buttonWidth
-                text: "I have an account"
-                visible: creating && signedInAs === ""
+                text: "New here? Create a Community Account"
+                visible: signedInAs === ""
                 enabled: !busy
-                onClicked: page.stopCreating()
+                onClicked: page.openCreate()
             }
 
             Text {
                 objectName: "accountPrivacy"
                 width: parent.width
                 wrapMode: Text.Wrap
-                text: creating
-                      ? "Your name, e-mail address and password are sent over an encrypted connection to the Community Account service at appcatalog.webosarchive.org, which keeps your name and e-mail address. The password is not stored on this device."
-                      : "Your e-mail address and password are sent over an encrypted connection to the Community Account service at appcatalog.webosarchive.org. The password is not stored on this device."
+                text: "Your e-mail address and password are sent over an encrypted connection to the Community Account service at appcatalog.webosarchive.org. The password is not stored on this device."
                 color: "white"
                 opacity: 0.7
                 font.pixelSize: FontUtils.sizeToPixels("small")
