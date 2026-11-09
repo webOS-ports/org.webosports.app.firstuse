@@ -32,7 +32,7 @@ WebOSWindow {
     width: Settings.displayWidth
     height: Settings.displayHeight
 
-    property variant pageList: [ "Welcome", "Locale", "Country", "TimeZone", "WiFi", "Feeds", "LicenseAgreement", "Finished" ]
+    property variant pageList: [ "Welcome", "Locale", "Country", "TimeZone", "WiFi", "Feeds", "LicenseAgreement", "Account", "Finished" ]
 
     LunaService {
         id: service
@@ -49,7 +49,7 @@ WebOSWindow {
         function gotDeviceInfoSuccess(message) {
             var response = JSON.parse(message.payload)
             if(response.device_name.substring(0,7)==="qemux86"){
-                pageList = [ "Welcome", "Locale", "Country", "TimeZone", "Feeds", "LicenseAgreement", "Finished" ];
+                pageList = [ "Welcome", "Locale", "Country", "TimeZone", "Feeds", "LicenseAgreement", "Account", "Finished" ];
             }
         }
 
@@ -100,6 +100,10 @@ WebOSWindow {
                     pageStack.push(_pageItemList[_currentPage]);
                 }
             } else {
+                // What the last page asked to open afterwards, written before
+                // first use is marked done: that is what ends it.
+                var last = pageStack.currentItem;
+                FirstUseUtils.handOff(last.restoreAfterSetup === true, last.accountsAfterSetup === true);
                 FirstUseUtils.markFirstUseDone();
                 window.finish();
             }

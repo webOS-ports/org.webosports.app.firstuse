@@ -20,6 +20,7 @@ import QtQuick.Controls
 import QtTest
 
 import LunaNext.Common 0.1
+import firstuse 1.0
 
 /*
  * The app as a whole - qml/main.qml - walked through every step the way a
@@ -148,6 +149,20 @@ TestCase {
                what + " starts on a cut row: " + (top ? top.y : "none") + " at the top " + list.contentY);
     }
 
+    // Each [item, what] can be scrolled fully into flick's view.
+    function scrollEachIntoView(flick, items) {
+        items.forEach(function(w) {
+            verify(w[0] !== null, "no " + w[1]);
+            var top = w[0].mapToItem(flick.contentItem, 0, 0).y;
+            flick.contentY = Math.max(0, Math.min(top + w[0].height - flick.height,
+                                                  flick.contentHeight - flick.height));
+            var at = w[0].mapToItem(flick, 0, 0).y;
+            expect(at >= -1 && at + w[0].height <= flick.height + 1,
+                   w[1] + " cannot be scrolled into view: " + at + " in " + flick.height);
+        });
+        flick.contentY = flick.contentHeight - flick.height > 0 ? flick.contentHeight - flick.height : 0;
+    }
+
     function forwardTextOf(p) {
         return p.forwardButtonText;
     }
@@ -183,7 +198,7 @@ TestCase {
         verify(app !== null, "main.qml made");
         // The stand-in's deviceInfo says qemux86, which has no Wi-Fi step;
         // a phone has one.
-        app.pageList = [ "Welcome", "Locale", "Country", "TimeZone", "WiFi", "Feeds", "LicenseAgreement", "Finished" ];
+        app.pageList = [ "Welcome", "Locale", "Country", "TimeZone", "WiFi", "Feeds", "LicenseAgreement", "Account", "Finished" ];
         tryVerify(function() { return app.visible && app.contentItem.width === app.width; }, 5000);
         compare(app.width, Settings.displayWidth);
         compare(app.height, Settings.displayHeight);
@@ -349,6 +364,22 @@ TestCase {
         shot("10-licence");
 
         p = next(p, "Accept");
+        compare(p.title, "Your webOS account");
+        // Signing in is not needed to go on.
+        verifyStep(p, "Skip");
+        var accountFlick = findChild(p, "accountFlick");
+        verify(accountFlick !== null, "no scrolling for the account page");
+        verifyClearOfButtons(p, accountFlick, "the account page's content");
+        var accountParts = [[findChild(p, "accountEmail"), "the e-mail field"],
+                            [findChild(p, "accountPassword"), "the password field"],
+                            [findChild(p, "accountSignIn"), "Sign in"],
+                            [findChild(p, "accountPrivacy"), "the privacy note"]];
+        shot("11-account");
+        scrollEachIntoView(accountFlick, accountParts);
+        shot("11-account-end");
+        compare(findChild(p, "accountPassword").echoMode, TextInput.Password);
+
+        p = next(p, "Skip");
         compare(p.title, "Everything setup!");
         verifyStep(p, "Done!");
         // A short screen scrolls the page's words: each is checked once
@@ -356,21 +387,42 @@ TestCase {
         var finishedFlick = findChild(p, "finishedFlick");
         verify(finishedFlick !== null, "no scrolling for the finished page");
         verifyClearOfButtons(p, finishedFlick, "the finished page's words");
-        var accounts = button(p, "Add accounts");
+        var restore = findChild(p, "restoreAfterSetup");
+        var accounts = findChild(p, "accountsAfterSetup");
+        verify(restore !== null && accounts !== null);
+        // Nothing is opened afterwards unless asked for.
+        verify(!restore.checked && !accounts.checked);
+        [[restore, "the restore choice"], [accounts, "the accounts choice"]].forEach(function(w) {
+            // Read whole, and light on the dark page. (On screen once
+            // scrolled to, below.)
+            expect(w[0].contentItem.width > 0 && w[0].contentItem.height > 0, w[1] + " has no size");
+            expect(!w[0].contentItem.truncated, w[1] + " is cut off");
+            expect(w[0].contentItem.lineCount === 1 || w[0].contentItem.wrapMode !== Text.NoWrap,
+                   w[1] + " does not wrap");
+            expect(Qt.colorEqual(w[0].contentItem.color, "white"), w[1] + " is " + w[0].contentItem.color);
+        });
         var later = find(p, function(c) { return c instanceof Text && c.text.indexOf("Or you can now") === 0; });
         verify(later !== null);
-        shot("11-finished");
-        [[accounts, "Add accounts"], [later, "the closing words"]].forEach(function(w) {
-            var top = w[0].mapToItem(finishedFlick.contentItem, 0, 0).y;
-            finishedFlick.contentY = Math.max(0, Math.min(top + w[0].height - finishedFlick.height,
-                                                          finishedFlick.contentHeight - finishedFlick.height));
-            var at = w[0].mapToItem(finishedFlick, 0, 0).y;
-            expect(at >= -1 && at + w[0].height <= finishedFlick.height + 1,
-                   w[1] + " cannot be scrolled into view: " + at + " in " + finishedFlick.height);
-        });
-        finishedFlick.contentY = finishedFlick.contentHeight - finishedFlick.height > 0
-                ? finishedFlick.contentHeight - finishedFlick.height : 0;
-        shot("11-finished-end");
+        shot("12-finished");
+        scrollEachIntoView(finishedFlick, [[restore, "the restore choice"],
+                                           [accounts, "the accounts choice"],
+                                           [later, "the closing words"]]);
+        shot("12-finished-end");
+
+        // Asking for a restore, and nothing else, hands that to
+        // LunaAppManager before first use is marked done. Done! ends the
+        // app, so this is the walk's last step.
+        finishedFlick.contentY = Math.max(0, Math.min(restore.mapToItem(finishedFlick.contentItem, 0, 0).y,
+                                                      finishedFlick.contentHeight - finishedFlick.height));
+        mouseClick(restore);
+        verify(restore.checked, "the restore choice did not take a tap");
+        var handOffs = FirstUseUtils.handOffs.length;
+        mouseClick(button(p, "Done!"));
+        tryVerify(function() { return FirstUseUtils.handOffs.length === handOffs + 1; }, 5000, "nothing handed off");
+        var handed = FirstUseUtils.handOffs[handOffs];
+        compare(handed.restore, true);
+        compare(handed.accounts, false);
+        verify(handed.beforeDone, "handed off after first use was marked done");
 
         verify(allProblems.length === 0, allProblems.join("\n"));
     }

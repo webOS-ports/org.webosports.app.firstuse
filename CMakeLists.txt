@@ -27,3 +27,13 @@ install(FILES ${LICENSE_DATA} DESTINATION ${LICENSE_DIR})
 install(DIRECTORY qml DESTINATION ${APP_DIR})
 
 add_subdirectory(plugin)
+
+# The plugin's own C++ unit tests, off unless asked for:
+#   cmake -DBUILD_TESTING=ON ...
+option(BUILD_TESTING "Build the plugin's unit tests" OFF)
+if(BUILD_TESTING)
+    enable_testing()
+    add_executable(tst_handoff test/unit/tst_handoff.cpp plugin/handoff.cpp)
+    target_include_directories(tst_handoff PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/plugin)
+    add_test(NAME tst_handoff COMMAND tst_handoff)
+endif()
