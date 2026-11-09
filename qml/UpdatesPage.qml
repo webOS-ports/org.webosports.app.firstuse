@@ -22,8 +22,11 @@ import LunaNext.Common 0.1
 import LuneOS.Service 1.0
 
 /*
- * Checking for a system update once the device is online, and installing it
- * before setup goes on, as a phone does on its first start.
+ * Installing a system update before setup goes on, as a phone does on its
+ * first start. The step is only seen when there is one: main.qml checks in
+ * the background on the step before and passes it over when there is none;
+ * when the answer is not in yet, this page checks and goes on by itself if
+ * there is nothing to install (or no answer that says there is).
  *
  * org.webosports.service.update does the work, as for the Settings app's
  * System Updates page: checkUpdate, then the downloadUpdate subscription
@@ -46,6 +49,11 @@ BasePage {
 
     //! First Use came back here after installing an update.
     property bool resumed: false
+    //! checkUpdate's reply that said there is an update, when main.qml
+    //! checked before this step opened: it is not asked again.
+    property var knownReply: null
+    //! Went on by itself, having nothing to offer: back() steps over it.
+    property bool passedOver: false
 
     // "checking", "uptodate", "available", "downloading", "installing" or
     // "failed". Not "state": that is Item's.
@@ -76,7 +84,21 @@ BasePage {
         if (resumed)
             setResume("");
         retrieveVersion();
-        checkForUpdate();
+        if (knownReply) {
+            updateState = "checking";
+            _checkReply(knownReply);
+        } else {
+            checkForUpdate();
+        }
+    }
+
+    // The step is only for installing an update: with none to offer (or no
+    // answer that says there is one), setup goes on without it.
+    function goOnWithoutIt() {
+        if (pageStack.currentItem !== page)
+            return;
+        passedOver = true;
+        pageStack.next();
     }
 
     function _parse(message) {
@@ -133,6 +155,7 @@ BasePage {
         if (!r || r.returnValue === false || r.success !== true) {
             _fail("Could not check for updates" + (_reason(r) ? ": " + _reason(r) : ".") +
                   " You can check later in Settings, System Updates.");
+            goOnWithoutIt();
             return;
         }
         if (r.needUpdate === true) {
@@ -145,12 +168,15 @@ BasePage {
             updateState = "uptodate";
             statusText = resumed ? "The update is installed. This device is up to date."
                                  : "This device is up to date.";
+            goOnWithoutIt();
         }
     }
 
     function _checkFailed(error) {
-        if (updateState === "checking")
-            _fail("Could not check for updates. You can check later in Settings, System Updates.");
+        if (updateState !== "checking")
+            return;
+        _fail("Could not check for updates. You can check later in Settings, System Updates.");
+        goOnWithoutIt();
     }
 
     function installNow() {

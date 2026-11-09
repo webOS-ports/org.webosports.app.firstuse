@@ -355,8 +355,13 @@ TestCase {
         mouseClick(button(warning, "Cancel"));
         tryVerify(function() { return !ok.visible || ok.width === 0 || !warning.visible; }, 5000, "the warning stayed");
 
-        // The stand-in has no update service: the check is put back to
-        // waiting, and the answers given as the service would.
+        // The stand-in has no update service, which leaves the update step
+        // out (tst_updates_page.qml): an update to offer is given as the
+        // service would, so the step is shown. It is put back to waiting for
+        // its first picture.
+        app.updateReply = { payload: JSON.stringify({ returnValue: true, success: true, needUpdate: true,
+            changesSinceLast: [ { version: 26, changes: [ "Wi-Fi fixes" ] } ] }) };
+        app.updateCheck = "available";
         p = next(p, "Continue");
         compare(p.title, "Software Update");
         p.updateState = "checking";

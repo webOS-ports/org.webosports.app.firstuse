@@ -79,6 +79,46 @@ WebOSWindow {
         window.visible = true;
     }
 
+    /*
+     * The update step is shown only when there is an update to install. The
+     * check starts in the background on the step before it (once the device
+     * is online after Wi-Fi), so by the time that step is done the answer is
+     * usually in: no update, or no answer that says there is one, and the
+     * step is passed over. Still checking: the step opens, checks itself and
+     * goes on by itself if there is nothing (UpdatesPage).
+     *
+     * "" not asked yet, "pending", "available" or "none".
+     */
+    property string updateCheck: ""
+    //! The reply that said "available", for the update step to start from.
+    property var updateReply: null
+
+    function startUpdateCheck() {
+        if (updateCheck !== "")
+            return;
+        updateCheck = "pending";
+        service.call("luna://org.webosports.service.update/checkUpdate", "{}", function(message) {
+            var r = null;
+            try {
+                r = JSON.parse(message.payload);
+            } catch (e) {
+                r = null;
+            }
+            if (r && r.returnValue !== false && r.success === true && r.needUpdate === true) {
+                updateReply = message;
+                updateCheck = "available";
+            } else {
+                updateCheck = "none";
+            }
+        }, function(error) {
+            updateCheck = "none";
+        });
+    }
+
+    function skipPage(name) {
+        return name === "Updates" && updateCheck === "none";
+    }
+
     function buildPagePath(index) {
         return pageList[index] + "Page.qml";
     }
@@ -103,16 +143,31 @@ WebOSWindow {
             if (_currentPage < pageList.length - 1)
             {
                 _currentPage += 1;
-                if (_currentPage > _pageItemList.length - 1) {
+                var name = pageList[_currentPage];
+                // The step after this one checks; start it now, in the background.
+                if (pageList[_currentPage + 1] === "Updates")
+                    startUpdateCheck();
+                if (skipPage(name)) {
+                    // Passed over: a hole in the list, which back() steps over too.
+                    if (_currentPage > _pageItemList.length - 1)
+                        _pageItemList.push(null);
+                    next();
+                    return;
+                }
+                if (_currentPage > _pageItemList.length - 1 || _pageItemList[_currentPage] === null) {
                     var pageComp = Qt.createComponent( Qt.resolvedUrl(buildPagePath(_currentPage)) );
 
                     if (pageComp.status === Component.Error) {
                         // Error Handling
                         console.log("Error loading component:", pageComp.errorString());
                     }
-                    var page = pageComp.createObject(pageStack);
+                    var page = pageComp.createObject(pageStack,
+                            name === "Updates" && updateCheck === "available" ? { knownReply: updateReply } : {});
                     pageStack.push(page);
-                    _pageItemList.push(page);
+                    if (_currentPage > _pageItemList.length - 1)
+                        _pageItemList.push(page);
+                    else
+                        _pageItemList[_currentPage] = page;
                 }
                 else {
                     pageStack.push(_pageItemList[_currentPage]);
@@ -148,10 +203,23 @@ WebOSWindow {
             _currentPage = i;
         }
 
+        // Back over a step that was passed over too: one never opened (a hole
+        // in the list), or one that went on by itself (passedOver). Never
+        // below the first page on the stack (after a resume, the steps
+        // before it were never opened).
         function back() {
-            if (_currentPage > 0)
-                _currentPage -= 1;
-            pageStack.pop();
+            if (depth <= 1)
+                return;
+            var i = _currentPage - 1;
+            while (i > 0 && (!_pageItemList[i] || _pageItemList[i].passedOver === true))
+                i -= 1;
+            var target = _pageItemList[i];
+            if (!target || (target.passedOver === true && i === 0)) {
+                target = get(0);
+                i = _pageItemList.indexOf(target);
+            }
+            _currentPage = i;
+            pop(target);
         }
     }
 }

@@ -127,6 +127,18 @@ Item {
             compare(page.forwardButtonText, "Next");
             verify(!child("updatesInstall").visible);
             compare(child("updatesVersion").text, "This device runs LuneOS 1.0.");
+            // Nothing to install: setup goes on without this step, and Back steps over it.
+            compare(pageStack.nextCount, 1);
+            verify(page.passedOver);
+        }
+
+        function test_anUpdateFoundBeforeTheStepIsNotAskedForAgain() {
+            open({ knownReply: { payload: JSON.stringify(available) } });
+            compare(luna.callsTo(checkUri).length, 0, "checked again");
+            compare(page.updateState, "available");
+            compare(page.newVersion, "26");
+            compare(pageStack.nextCount, 0);
+            verify(!page.passedOver);
         }
 
         function test_anUpdateIsOfferedNotForced() {
@@ -146,6 +158,9 @@ Item {
             compare(page.updateState, "failed");
             compare(page.statusText, "Could not check for updates: No internet connection. You can check later in Settings, System Updates.");
             compare(page.forwardButtonText, "Next");
+            // No answer that says there is an update: setup goes on without the step.
+            compare(pageStack.nextCount, 1);
+            verify(page.passedOver);
             verify(child("updatesCheckAgain").visible);
             click("updatesCheckAgain");
             compare(luna.callsTo(checkUri).length, 2);
@@ -156,6 +171,7 @@ Item {
             luna.callsTo(checkUri)[0].onCallFailed("Service does not exist");
             compare(page.updateState, "failed");
             verify(page.forwardButtonVisible);
+            compare(pageStack.nextCount, 1);
         }
 
         function test_installNowDownloadsKeepsThePlaceThenRestarts() {
@@ -228,6 +244,10 @@ Item {
             send(download(), { success: false, error: true, msg: "version not present anymore", needCheck: true });
             compare(page.updateState, "checking");
             compare(luna.callsTo(checkUri).length, 2);
+            compare(pageStack.nextCount, 0);
+            // and it is gone: nothing left to install.
+            answerCheck({ returnValue: true, success: true, needUpdate: false });
+            compare(pageStack.nextCount, 1);
         }
 
         function test_stoppingTheDownload() {
@@ -272,12 +292,24 @@ Item {
             verify(!page.hasBackButton);
             answerCheck({ returnValue: true, success: true, needUpdate: false });
             compare(page.statusText, "The update is installed. This device is up to date.");
+            compare(pageStack.nextCount, 1, "stayed on the step with nothing more to install");
+        }
+
+        function test_anUpdateDoesNotGoOnByItself() {
+            open();
+            answerCheck(available);
+            compare(pageStack.nextCount, 0);
+            verify(!page.passedOver);
+            // nor does a download that failed.
+            send(download(), { error: true, msg: "x" });
+            compare(pageStack.nextCount, 0);
         }
     }
 
-    // First Use as a whole: where it starts after the update's restart.
+    // First Use as a whole: where it starts after the update's restart, and
+    // when the update step is shown at all.
     TestCase {
-        name: "Resume"
+        name: "MainFlow"
         when: windowShown
 
         function makeApp() {
@@ -324,6 +356,92 @@ Item {
 
         function luna_reply(luna, call, payload) {
             luna.reply(call, payload);
+        }
+
+        // ---- the update step, shown only for an update ----
+
+        readonly property string checkUri: "luna://org.webosports.service.update/checkUpdate"
+
+        // To the feeds step, which starts the check; the stand-in answers nothing by itself.
+        function toFeeds() {
+            var a = makeApp();
+            a.app.pageList = [ "Welcome", "Feeds", "Updates", "LicenseAgreement", "Finished" ];
+            a.stack.next();
+            tryVerify(function() { return a.stack.currentItem.title === "Preware Feeds"; }, 5000);
+            var calls = a.luna.callsTo(checkUri);
+            compare(calls.length, 1, "the check did not start on the step before");
+            a.check = calls[0];
+            return a;
+        }
+
+        function settle(a) {
+            tryVerify(function() { return !a.stack.busy; }, 5000);
+        }
+
+        function test_noUpdateNoStep() {
+            var a = toFeeds();
+            luna_reply(a.luna, a.check, { returnValue: true, success: true, needUpdate: false });
+            a.stack.next();
+            settle(a);
+            compare(a.stack.currentItem.title, "License Agreement");
+            compare(a.stack.depth, 3);
+            // Back steps over it, and forward again too.
+            a.stack.back();
+            settle(a);
+            compare(a.stack.currentItem.title, "Preware Feeds");
+            a.stack.next();
+            settle(a);
+            compare(a.stack.currentItem.title, "License Agreement");
+            compare(a.luna.callsTo(checkUri).length, 1, "checked twice");
+            a.app.destroy();
+        }
+
+        function test_noAnswerThatSaysSoNoStep() {
+            var a = toFeeds();
+            a.check.onCallFailed("Service does not exist");
+            a.stack.next();
+            settle(a);
+            compare(a.stack.currentItem.title, "License Agreement");
+            a.app.destroy();
+            a = toFeeds();
+            luna_reply(a.luna, a.check, { returnValue: false, success: false, message: "No internet connection." });
+            a.stack.next();
+            settle(a);
+            compare(a.stack.currentItem.title, "License Agreement");
+            a.app.destroy();
+        }
+
+        function test_anUpdateIsTheStep() {
+            var a = toFeeds();
+            luna_reply(a.luna, a.check, { returnValue: true, success: true, needUpdate: true,
+                                          changesSinceLast: [ { version: 26, changes: [ "c" ] } ] });
+            a.stack.next();
+            settle(a);
+            var p = a.stack.currentItem;
+            compare(p.title, "Software Update");
+            compare(p.updateState, "available");
+            compare(findChild(p, "updatesService").callsTo(checkUri).length, 0, "the step checked again");
+            a.app.destroy();
+        }
+
+        function test_stillCheckingTheStepChecksAndGoesOnIfNothing() {
+            var a = toFeeds();
+            a.stack.next();
+            settle(a);
+            var p = a.stack.currentItem;
+            compare(p.title, "Software Update");
+            compare(p.updateState, "checking");
+            var own = findChild(p, "updatesService").callsTo(checkUri);
+            compare(own.length, 1);
+            findChild(p, "updatesService").reply(own[0], { returnValue: true, success: true, needUpdate: false });
+            settle(a);
+            compare(a.stack.currentItem.title, "License Agreement");
+            // Back steps over the step that went on by itself.
+            a.stack.back();
+            settle(a);
+            compare(a.stack.currentItem.title, "Preware Feeds");
+            compare(a.stack.depth, 2);
+            a.app.destroy();
         }
     }
 }

@@ -26,10 +26,14 @@ service's own error text is for the log and not shown.
 
 ## Software update
 
-After Wi-Fi and the feeds, `UpdatesPage` checks for a system update with
-org.webosports.service.update (`checkUpdate`, as the Settings app's System
-Updates page does), which shows no toast of its own while first use runs. An
-update can be installed there ("Install now": `downloadUpdate`, then
+After Wi-Fi and the feeds comes a software update step, shown only when
+there is an update to install. main.qml asks org.webosports.service.update
+(`checkUpdate`, as the Settings app's System Updates page does; it shows no
+toast of its own while first use runs) in the background as the feeds step
+opens. No update, or no answer that says there is one, and the step is passed
+over, going on and going back. An update, and `UpdatesPage` opens with that
+answer. Still waiting, and the page checks itself and goes on by itself if
+there is nothing to install. An update can be installed there ("Install now": `downloadUpdate`, then
 `initiateUpdate`, which restarts the device into the update) or left for
 later. Before the restart the page sets the systemservice preference
 `firstUseResume` to `"Updates"`; main.qml reads it as it starts and opens that
@@ -73,8 +77,10 @@ checkout) and Qt 6's `qmltestrunner`; without a display, run it with
   making an account on its own page: the terms on theirs, nothing sent until
   they are there and agreed to, the password length counted as the server
   counts it, and back to the account step signed in.
-- `test/tst_updates_page.qml`: the update step - checking, up to date, an
-  update offered and not forced, the download and its failures, stopping it,
+- `test/tst_updates_page.qml`: the update step - shown only for an update
+  (passed over going on and back, the background check's answer used, the
+  step going on by itself when it finds nothing), an update offered and not
+  forced, the download and its failures, stopping it,
   the place kept before the restart and only then the restart - and first
   use starting again at that step after it.
 - `test/screens/tst_screens.qml`: the whole app walked through every step -
