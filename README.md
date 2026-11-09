@@ -11,9 +11,14 @@ device and will guide the user through the setup process of the system.
 
 The account step signs in with a Community Account through
 `com.palm.accountservices/authenticateAccount`
-(org.webosports.service.communityaccount), or is skipped. The address and
-password go to that service and on to the account server; the app does not
-keep the password, and clears it from the field as soon as it is sent.
+(org.webosports.service.communityaccount), makes one with
+`createNovaAccount`, or is skipped. Making one first fetches the account
+server's terms of service (`getTermsAndConditions`, as plain text, shown as
+plain text) and cannot be sent until they are on the page; creating the
+account is agreeing to them, and signs the device in with it. The name,
+address and password go to that service and on to the account server; the
+app does not keep the password, and clears it from the field as soon as it
+is sent.
 
 Restoring a backup and adding accounts cannot happen during first use: the
 Accounts app needs a normal session, and a restore ends in a restart. The last

@@ -74,6 +74,21 @@ Item {
             return c;
         }
 
+        // A tap on what may be below the fold: the page scrolls it into view first, as a finger would.
+        function tap(name) {
+            var c = child(name);
+            var flick = child("accountFlick");
+            verify(c.visible, name + " is not shown");
+            // Laid out first: the terms may just have come in.
+            waitForRendering(flick);
+            var at = c.mapToItem(flick.contentItem, 0, 0);
+            flick.contentY = Math.max(0, Math.min(at.y, flick.contentHeight - flick.height));
+            waitForRendering(flick);
+            var inView = c.mapToItem(flick, 0, 0);
+            verify(inView.y >= 0 && inView.y + c.height <= flick.height, name + " is not in view to tap");
+            mouseClick(c);
+        }
+
         function fill(address, password) {
             child("accountEmail").text = address;
             child("accountPassword").text = password;
@@ -164,6 +179,125 @@ Item {
             verify(!page.busy);
             compare(child("accountStatus").text, page.unavailableText);
             compare(page.forwardButtonText, "Skip");
+        }
+
+        // ---- making an account ----
+
+        readonly property string createUri: "luna://com.palm.accountservices/createNovaAccount"
+        readonly property string termsUri: "luna://com.palm.accountservices/getTermsAndConditions"
+        readonly property string someTerms: "Terms of Service\n\n1. Your account\n\n<b>not bold</b>"
+
+        // Tap Create an account and answer the terms call.
+        function startCreating(termsReply) {
+            tap("accountStartCreate");
+            compare(luna.callsTo(termsUri).length, 1, "the terms were not asked for");
+            if (termsReply !== undefined)
+                luna.reply(luna.callsTo(termsUri)[0], termsReply);
+        }
+
+        function fillNew() {
+            child("accountFirstName").text = " Ada ";
+            child("accountLastName").text = "Lovelace ";
+            fill(" new@example.org ", "correct horse");
+        }
+
+        function test_creatingShowsTheTermsAsPlainTextBeforeAnythingCanBeSent() {
+            verify(!child("accountFirstName").visible);
+            startCreating();
+            verify(page.creating);
+            verify(child("accountFirstName").visible && child("accountLastName").visible);
+            verify(!child("accountSignIn").visible, "Sign in is offered while making an account");
+            verify(!child("accountCreate").enabled, "an account can be made before the terms are shown");
+            luna.reply(luna.callsTo(termsUri)[0], { returnValue: true, terms: someTerms });
+            var shown = child("accountTerms");
+            compare(shown.textFormat, Text.PlainText);
+            compare(shown.text, someTerms);
+            verify(child("accountCreate").enabled);
+        }
+
+        function test_createSendsNameAddressAndPasswordAndForgetsThePassword() {
+            startCreating({ returnValue: true, terms: someTerms });
+            fillNew();
+            tap("accountCreate");
+            var calls = luna.callsTo(createUri);
+            compare(calls.length, 1);
+            compare(calls[0].args.firstName, "Ada");
+            compare(calls[0].args.lastName, "Lovelace");
+            compare(calls[0].args.email, "new@example.org");
+            compare(calls[0].args.password, "correct horse");
+            compare(Object.keys(calls[0].args).sort().join(","), "email,firstName,lastName,password");
+            compare(child("accountPassword").text, "");
+            compare(luna.callsTo(uri).length, 0, "a sign-in was sent as well");
+
+            page.createAccount();
+            compare(luna.callsTo(createUri).length, 1, "two at once");
+
+            luna.reply(calls[0], { returnValue: true, accountAlias: "new@example.org", username: "Ada Lovelace" });
+            compare(page.signedInAs, "Ada Lovelace");
+            compare(page.forwardButtonText, "Next");
+            compare(child("accountStatus").text, "Your account is ready. Signed in as Ada Lovelace.");
+            verify(!child("accountCreate").visible && !child("accountTerms").visible);
+        }
+
+        function test_createNeedsAFirstNameAnAddressAndAPassword() {
+            startCreating({ returnValue: true, terms: someTerms });
+            fillNew();
+            child("accountFirstName").text = "  ";
+            tap("accountCreate");
+            fillNew();
+            child("accountEmail").text = "";
+            tap("accountCreate");
+            fillNew();
+            child("accountPassword").text = "";
+            tap("accountCreate");
+            compare(luna.callsTo(createUri).length, 0);
+            verify(child("accountStatus").isError);
+        }
+
+        function test_noTermsNoAccount() {
+            startCreating({ returnValue: false, errorCode: "TERMS_ERROR" });
+            verify(!child("accountCreate").enabled);
+            compare(child("accountStatus").text, page.termsUnavailableText);
+            fillNew();
+            page.createAccount();
+            compare(luna.callsTo(createUri).length, 0);
+
+            // Blank terms are no terms either, and nor is no service.
+            cleanup();
+            init();
+            startCreating({ returnValue: true, terms: "  \n " });
+            verify(!child("accountCreate").enabled);
+            cleanup();
+            init();
+            startCreating();
+            luna.callsTo(termsUri)[0].onCallFailed("Service does not exist");
+            verify(!child("accountCreate").enabled);
+            compare(child("accountStatus").text, page.termsUnavailableText);
+        }
+
+        function test_theTermsAreFetchedOnce() {
+            startCreating({ returnValue: true, terms: someTerms });
+            tap("accountHaveOne");
+            verify(!page.creating);
+            verify(child("accountSignIn").visible);
+            tap("accountStartCreate");
+            compare(luna.callsTo(termsUri).length, 1);
+            verify(child("accountCreate").enabled);
+        }
+
+        function test_theServersCodesInWords() {
+            startCreating({ returnValue: true, terms: someTerms });
+            fillNew();
+            tap("accountCreate");
+            luna.reply(luna.callsTo(createUri)[0], { returnValue: false, errorCode: "EMAIL_TAKEN", errorText: "account server error EMAIL_TAKEN" });
+            compare(child("accountStatus").text, "There is already an account with this e-mail address. Sign in with it instead.");
+            compare(page.signedInAs, "");
+            verify(child("accountCreate").enabled);
+
+            cleanup();
+            init();
+            luna.reply(signIn(), { returnValue: false, errorCode: "AUTH_FAILED", errorText: "wrong e-mail address or password" });
+            compare(child("accountStatus").text, "That e-mail address and password do not match an account.");
         }
 
         function test_nothingIsSentWithoutBoth() {

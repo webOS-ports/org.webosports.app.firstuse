@@ -364,7 +364,7 @@ TestCase {
         shot("10-licence");
 
         p = next(p, "Accept");
-        compare(p.title, "Your webOS account");
+        compare(p.title, "Your Community Account");
         // Signing in is not needed to go on.
         verifyStep(p, "Skip");
         var accountFlick = findChild(p, "accountFlick");
@@ -378,6 +378,31 @@ TestCase {
         scrollEachIntoView(accountFlick, accountParts);
         shot("11-account-end");
         compare(findChild(p, "accountPassword").echoMode, TextInput.Password);
+
+        // Making an account: terms as long as the server's, then every field
+        // and button reachable.
+        p.startCreating();
+        var para = "We store only what is needed to run the service: your account details and a per-device sign-in token, and any app data you choose to sync.";
+        p.termsReply({ payload: JSON.stringify({ returnValue: true,
+            terms: "Terms of Service\n\n" + [1, 2, 3, 4, 5, 6].map(function(n) { return n + ". Section\n\n" + para; }).join("\n\n") }) });
+        accountFlick.contentY = 0;
+        waitForRendering(accountFlick);
+        shot("11-account-create");
+        scrollEachIntoView(accountFlick, [[findChild(p, "accountFirstName"), "the first name field"],
+                                          [findChild(p, "accountLastName"), "the last name field"],
+                                          [findChild(p, "accountEmail"), "the e-mail field"],
+                                          [findChild(p, "accountPassword"), "the password field"],
+                                          [findChild(p, "accountCreate"), "Create account"],
+                                          [findChild(p, "accountHaveOne"), "I have an account"],
+                                          [findChild(p, "accountPrivacy"), "the privacy note"]]);
+        shot("11-account-create-end");
+        // The terms may be longer than the screen: they scroll, all of them.
+        var termsText = findChild(p, "accountTerms");
+        var termsTop = termsText.mapToItem(accountFlick.contentItem, 0, 0).y;
+        verify(termsText.height > 0 && termsTop >= 0 && termsTop + termsText.height <= accountFlick.contentHeight,
+               "the terms are not all in the scrolled content");
+        p.stopCreating();
+        accountFlick.contentY = 0;
 
         p = next(p, "Skip");
         compare(p.title, "Everything setup!");
