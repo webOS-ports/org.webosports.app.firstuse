@@ -22,7 +22,7 @@ import LunaNext.Common 0.1
 import LuneOS.Service 1.0
 
 /*
- * Signing in with a webOS Community Account, or skipping it.
+ * Signing in with a Community Account, or skipping it.
  *
  * com.palm.accountservices (org.webosports.service.communityaccount) signs
  * in, makes the signed-in account the device's profile and keeps the token it
@@ -114,7 +114,7 @@ BasePage {
             Text {
                 width: parent.width
                 wrapMode: Text.Wrap
-                text: "Sign in with your webOS Community Account to use it on this device, or skip this and sign in later from Accounts."
+                text: "Sign in with your Community Account to use it on this device, or skip this and sign in later from Accounts."
                 color: "white"
                 font.pixelSize: FontUtils.sizeToPixels("medium")
             }
@@ -176,7 +176,7 @@ BasePage {
                 objectName: "accountPrivacy"
                 width: parent.width
                 wrapMode: Text.Wrap
-                text: "Your e-mail address and password are sent over an encrypted connection to the webOS Community Account service at appcatalog.webosarchive.org. The password is not stored on this device."
+                text: "Your e-mail address and password are sent over an encrypted connection to the Community Account service at appcatalog.webosarchive.org. The password is not stored on this device."
                 color: "white"
                 opacity: 0.7
                 font.pixelSize: FontUtils.sizeToPixels("small")

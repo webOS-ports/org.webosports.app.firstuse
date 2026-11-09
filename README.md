@@ -9,7 +9,7 @@ device and will guide the user through the setup process of the system.
 
 ## Signing in and what comes after
 
-The account step signs in with a webOS Community Account through
+The account step signs in with a Community Account through
 `com.palm.accountservices/authenticateAccount`
 (org.webosports.service.communityaccount), or is skipped. The address and
 password go to that service and on to the account server; the app does not
