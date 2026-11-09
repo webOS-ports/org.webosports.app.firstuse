@@ -79,6 +79,10 @@ BasePage {
         var code = reply ? String(reply.errorCode) : "";
         if (known.hasOwnProperty(code))
             showError(known[code]);
+        // Something inside the device, not the server's answer: its text is
+        // bus calls and payloads, of no use on this screen.
+        else if (code === "CONNECTOR_EXCEPTION")
+            showError("");
         else
             showError(reply ? reply.errorText : "");
     }

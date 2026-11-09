@@ -300,6 +300,12 @@ Item {
             compare(child("accountStatus").text, "That e-mail address and password do not match an account.");
         }
 
+        function test_aFailureInsideTheDeviceIsNotShownAsBusText() {
+            luna.reply(signIn(), { returnValue: false, errorCode: "CONNECTOR_EXCEPTION",
+                errorText: "Error: palm://com.palm.service.accounts/createAccount {\"templateId\":\"com.palm.palmprofile\"}: Denied method call" });
+            compare(child("accountStatus").text, page.unavailableText);
+        }
+
         function test_nothingIsSentWithoutBoth() {
             fill("", "s3cret");
             mouseClick(child("accountSignIn"));
