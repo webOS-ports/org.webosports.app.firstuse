@@ -61,11 +61,16 @@ BasePage {
         CreateAccountPage { }
     }
 
+    // Next tapped while "Signed in as ..." shows: setup has gone on already,
+    // and going on again when the wait is up would pass the last step by.
+    onForwardClicked: goOn.stop()
+
     Timer {
         id: goOn
         objectName: "accountGoOn"
         interval: page.goOnAfterMs
-        onTriggered: pageStack.next()
+        // Only from here: Back (or anything else) may have left this page.
+        onTriggered: if (pageStack.currentItem === page) pageStack.next()
     }
 
     Timer {

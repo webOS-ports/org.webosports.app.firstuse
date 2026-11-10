@@ -162,6 +162,41 @@ Item {
             compare(pageStack.nextCount, 1, "went on twice");
         }
 
+        // The forward button, found by what it says.
+        function forwardButton(text) {
+            var todo = [page];
+            while (todo.length > 0) {
+                var c = todo.shift();
+                if (c instanceof Button && c.text === text && c.visible)
+                    return c;
+                for (var i = 0; i < c.children.length; i++)
+                    todo.push(c.children[i]);
+            }
+            verify(false, "no \"" + text + "\" button");
+            return null;
+        }
+
+        // Next tapped before setup went on by itself: once, not twice (that
+        // went past the last step, and First Use was over without it).
+        function test_nextTappedWhileSignedInGoesOnOnce() {
+            page.goOnAfterMs = 300;
+            luna.reply(signIn(), { returnValue: true, accountAlias: "member@example.org", username: "Member" });
+            mouseClick(forwardButton("Next"));
+            compare(pageStack.nextCount, 1, "Next did not go on");
+            wait(600);
+            compare(pageStack.nextCount, 1, "went on again when the wait was up");
+        }
+
+        // Left (Back, or the next step already open) before the wait was up:
+        // the page that is showing stays.
+        function test_noGoingOnFromAPageThatIsNotShowing() {
+            page.goOnAfterMs = 300;
+            luna.reply(signIn(), { returnValue: true, accountAlias: "member@example.org", username: "Member" });
+            pageStack.push(Qt.createQmlObject("import QtQuick; Item { }", pageStack), {}, StackView.Immediate);
+            wait(600);
+            compare(pageStack.nextCount, 0, "went on from a page that was not showing");
+        }
+
         function test_refusedSaysWhyWithItsCodeAndCanBeTriedAgain() {
             luna.reply(signIn(), { returnValue: false, errorCode: "AUTH_FAILED", errorText: "wrong e-mail address or password" });
             compare(page.signedInAs, "");
