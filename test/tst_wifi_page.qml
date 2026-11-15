@@ -265,6 +265,28 @@ Item {
             pageStack.pop();
         }
 
+        // Ticking or unticking Show passphrase leaves the passphrase in focus,
+        // and with it the keyboard up, whether it had the focus before or not.
+        function test_showPassphraseKeepsTheFocus() {
+            mouseClick(row({ ssid: "Cafe", availableSecurityTypes: ["psk"], signalBars: 1 }));
+            compare(pageStack.depth, 2, "no passphrase page");
+            var field = findChild(pageStack.currentItem, "passphrase");
+            var show = findChild(pageStack.currentItem, "showPassphrase");
+            field.forceActiveFocus();
+            verify(field.activeFocus);
+            mouseClick(show);
+            compare(show.checked, true);
+            verify(field.activeFocus, "ticked, the passphrase lost the focus");
+            mouseClick(show);
+            compare(show.checked, false);
+            verify(field.activeFocus, "unticked, the passphrase lost the focus");
+            field.focus = false;
+            verify(!field.activeFocus);
+            mouseClick(show);
+            verify(field.activeFocus, "ticked with no focus, the passphrase did not get it");
+            pageStack.pop();
+        }
+
         function test_openNetworkConnectsBySsid() {
             mouseClick(row({ ssid: "Open", availableSecurityTypes: [], signalBars: 1 }));
             compare(luna.callsTo(connectUri)[0].args.ssid, "Open");

@@ -124,6 +124,11 @@ BasePage {
                 objectName: "showPassphrase"
                 checked: false
                 text: "Show passphrase"
+                // Showing or hiding it is part of typing the passphrase: the
+                // box does not take the focus (which took the keyboard down),
+                // and the passphrase has it after, to go on typing.
+                focusPolicy: Qt.NoFocus
+                onToggled: passphrase.forceActiveFocus()
             }
         }
     }
