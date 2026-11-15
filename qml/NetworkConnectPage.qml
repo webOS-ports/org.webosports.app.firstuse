@@ -67,6 +67,8 @@ BasePage {
                 font.pixelSize: FontUtils.sizeToPixels("medium")
                 echoMode: TextInput.Normal
                 placeholderText: "Enter username ..."
+                // A login name, not prose: no capital, no words offered for it.
+                inputMethodHints: Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 visible: securityTypes.indexOf("ieee8021x") !== -1
 
                 onActiveFocusChanged: {
@@ -95,6 +97,11 @@ BasePage {
 
                 font.pixelSize: FontUtils.sizeToPixels("medium")
                 echoMode: showPassphrase.checked ? TextInput.Normal : TextInput.Password
+                // Shown, a passphrase is still a secret: only TextInput.Password
+                // tells the keyboard so by itself, and without these it offered
+                // the passphrase as words, and to learn it, as it was typed. As
+                // on the account pages.
+                inputMethodHints: Qt.ImhSensitiveData | Qt.ImhNoAutoUppercase | Qt.ImhNoPredictiveText
                 placeholderText: "Enter passphrase ..."
                 onActiveFocusChanged: {
                     if (passphrase.focus)
@@ -114,8 +121,14 @@ BasePage {
 
             CheckBox {
                 id: showPassphrase
+                objectName: "showPassphrase"
                 checked: false
                 text: "Show passphrase"
+                // Showing or hiding it is part of typing the passphrase: the
+                // box does not take the focus (which took the keyboard down),
+                // and the passphrase has it after, to go on typing.
+                focusPolicy: Qt.NoFocus
+                onToggled: passphrase.forceActiveFocus()
             }
         }
     }
