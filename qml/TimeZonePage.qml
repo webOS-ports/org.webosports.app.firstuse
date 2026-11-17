@@ -385,7 +385,11 @@ BasePage {
 
             TextField {
                 id: filterTextField
+                objectName: "filterTextField"
                 placeholderText: "Filter list..."
+                // A filter, not prose: no words offered for it. On a hardware keyboard
+                // the candidate bar was the whole panel, and it covered Back and Next.
+                inputMethodHints: Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase
                 height: Units.gu(4)
                 font.pixelSize: Units.gu(36/13.5)
                 anchors.left: parent.left
