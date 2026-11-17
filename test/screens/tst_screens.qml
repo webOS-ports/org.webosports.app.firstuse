@@ -209,6 +209,16 @@ TestCase {
             app.destroy();
     }
 
+    // A filter is not prose: no words offered and no capital. On a hardware
+    // keyboard (the Q25) the bar of offered words is all the keyboard shows,
+    // and it covered Back and Next.
+    function verifyFilterWithoutSuggestions(p, what) {
+        var field = findChild(p, "filterTextField");
+        verify(field !== null, "no filter field on " + what);
+        var wanted = Qt.ImhNoPredictiveText | Qt.ImhNoAutoUppercase;
+        compare(field.inputMethodHints & wanted, wanted, what + "'s filter is offered words");
+    }
+
     function test_steps() {
         var p = page();
         verifyStep(p, "Continue");
@@ -226,6 +236,7 @@ TestCase {
         tryVerify(function() { return list.count > 0; }, 5000, "no languages");
         verifyClearOfButtons(p, list, "the language list");
         verifyWholeTopRow(list, "the language list");
+        verifyFilterWithoutSuggestions(p, "the language step");
         shot("02-language");
 
         p = next(p, "Next");
@@ -236,6 +247,7 @@ TestCase {
         tryVerify(function() { return list.count > 0; }, 5000, "no countries");
         verifyClearOfButtons(p, list, "the country list");
         verifyWholeTopRow(list, "the country list");
+        verifyFilterWithoutSuggestions(p, "the country step");
         shot("03-country");
 
         p = next(p, "Next");
@@ -254,6 +266,7 @@ TestCase {
         var formatSwitch = find(p, function(c) { return c instanceof Switch && c.visible; });
         verify(formatSwitch !== null, "no time format switch");
         verifyInside(formatSwitch, "the time format switch");
+        verifyFilterWithoutSuggestions(p, "the time zone step");
         shot("04-timezone");
 
         p = next(p, "Next");
