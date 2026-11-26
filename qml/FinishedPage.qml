@@ -33,6 +33,10 @@ BasePage {
     property alias restoreAfterSetup: restoreBox.checked
     property alias accountsAfterSetup: accountsBox.checked
 
+    // Opt-ins under "Proprietary", saved as system preferences by main.qml when
+    // "Done!" is tapped.
+    property alias enableWidevine: widevineBox.checked
+
     AppLauncher {
         id: launcher
         clientName: "org.webosports.app.firstuse"
@@ -122,6 +126,41 @@ BasePage {
                 text: "Or you can now start using your device right away and do both later. Enjoy it!"
                 color: "white"
                 font.pixelSize: FontUtils.sizeToPixels("medium")
+            }
+
+            Item {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                height: Units.gu(2)
+            }
+
+            // Proprietary, closed-source add-ons: off by default, each
+            // downloaded from its maker when next online, not shipped by LuneOS.
+            // (HP Palm Mojo and the PDK frameworks will join Widevine here.)
+            Text {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                wrapMode: Text.Wrap
+                text: "Proprietary"
+                color: "white"
+                font.pixelSize: FontUtils.sizeToPixels("large")
+            }
+
+            Text {
+                anchors.left: parent.left
+                anchors.right: parent.right
+                wrapMode: Text.Wrap
+                text: "Optional closed-source extras, downloaded from their makers when you are next online. Your use of them is subject to their makers' terms."
+                color: "#cccccc"
+                font.pixelSize: FontUtils.sizeToPixels("small")
+            }
+
+            ChoiceBox {
+                id: widevineBox
+                objectName: "enableWidevine"
+                anchors.left: parent.left
+                anchors.right: parent.right
+                text: "Streaming DRM (Widevine) - Netflix, Prime Video and the like, on 64-bit ARM"
             }
         }
     }

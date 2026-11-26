@@ -176,6 +176,13 @@ WebOSWindow {
                 // What the last page asked to open afterwards, written before
                 // first use is marked done: that is what ends it.
                 var last = pageStack.currentItem;
+                // Proprietary opt-ins: persist them as system preferences so the
+                // device provisions them after setup (the Widevine CDM installer
+                // watches enableWidevineCdm and fetches it from Google on opt-in).
+                service.call("luna://com.palm.systemservice/setPreferences",
+                             JSON.stringify({ enableWidevineCdm: last.enableWidevine === true }),
+                             function (message) {},
+                             function (message) { console.log("setPreferences(enableWidevineCdm) failed: " + message.payload); });
                 FirstUseUtils.handOff(last.restoreAfterSetup === true, last.accountsAfterSetup === true);
                 FirstUseUtils.markFirstUseDone();
                 window.finish();
